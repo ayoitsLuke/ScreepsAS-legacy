@@ -1,0 +1,2 @@
+# ScreepsAS
+Screeps artificial stupidity
