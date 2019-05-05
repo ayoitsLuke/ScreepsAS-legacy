@@ -4,9 +4,6 @@
   "loadEagerly": [
     "ScreepsAutocomplete/**/*.js"
   ],
-  "dontLoad": [
-    "node_modules/**"
-  ],
   "plugins": {
     "doc_comment": true,
     "node": {
