@@ -1,9 +1,5 @@
 # Credentials & Junks
 /.screeps.json
-/.tern-project
-/Design
-/Info
-/ScreepsAutocomplete
 # Compiled source #
 ###################
 *.com
