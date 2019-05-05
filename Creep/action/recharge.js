@@ -1,11 +1,11 @@
 "use strict";
 /**
-@param {RoomObject=} targetOvrd RoomObject.id or any Object contains {pos: RoomPosition}
-@param {Object=} optsOvrd Same as [opts] for Room.find(). See: 
-https://docs.screeps.com/api/#Room.find
-
-@return {boolean} False if target cannot be found or action cannot be performed, otherwise true
-*/
+ * [description]
+ * @method
+ * @param  {RoomObject=} targetOvrd RoomObject.id or any Object contains {pos: RoomPosition}
+ * @param   {Object=} optsOvrd Same as [opts] for Room.find(). See: https://docs.screeps.com/api/#Room.find
+ * @return {boolean} False if target cannot be found or action cannot be performed, otherwise true
+ */
 Creep.prototype.go_recharge = function(targetOvrd, optsOvrd) {
     //"use strict";
     // Arguments handling

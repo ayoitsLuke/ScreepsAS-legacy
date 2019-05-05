@@ -1,11 +1,12 @@
 "use strict"
 /**
-@param {RoomObject=} targetOvrd RoomObject.id or any Object contains {pos: RoomPosition}
-@param {Object=} optsOvrd Same as [opts] for Room.find(). See: 
+* @param {RoomObject=} targetOvrd RoomObject.id or any Object contains {pos: RoomPosition}
+* @param {Object=} optsOvrd Same as [opts] for Room.find(). See:
 https://docs.screeps.com/api/#Room.find
 
-@return {boolean} False if target cannot be found or action cannot be performed, otherwise true
+* @return {boolean} False if target cannot be found or action cannot be performed, otherwise true
 */
+
 Creep.prototype.go_repair = function(targetOvrd, optsOvrd) {
     const reusePath = 50;
     const task = "repair";
