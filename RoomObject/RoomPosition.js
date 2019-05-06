@@ -39,34 +39,35 @@ function roomNameToXY(name) {
  * @return {Array.<RoomPosition>} The top-left corner RoomPosition of all such squares
  */
 Room.prototype.findSpaceForSquare = function(sideLength) {
-  let terrain = this.getTerrain();
-  let grid = new PathFinder.CostMatrix();
   // The index of `avoid` is the distance at which it should treat the values as obstacles
   // For example, index 2 makes all tiles in radius 2 around the controller "unwalkable"
   let avoid = {
     1: [..._.map(this.find(FIND_SOURCES), s => s.pos), ..._.map(this.find(FIND_MINERALS), s => s.pos)],
     3: [this.controller.pos]
   };
+  let grid = new PathFinder.CostMatrix();
+  let terrain = this.getTerrain();
   let spots = [];
   let y = 50;
   // Iteration starts from bottom right ⬅⬅⬆⬆
   while (y--) {
     let x = 50;
     nextPos: while (x--) {
-      // CostMatrix (default 0) if it's a wall
+      // Set gird as default (0) if it's a wall
       if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
         continue;
       }
       let pos = new RoomPosition(x, y, this.name);
-      // CostMatrix (default 0) if it's close to an object of avoidance
+      // Set gird as default (0) if it's close to an object of avoidance
       for (let r in avoid) {
         let objs = avoid[r];
         if (objs.find(o => o.inRangeTo(pos, r))) {
-          continue nextPos; // goto next RoomPosition
+          // move on to next RoomPosition upon finding object of avoidance
+          continue nextPos;
         }
       }
 
-      // The `score` of a tile is the minimum of its right, bottom, and bottom-right tile
+      // The `score` of a tile is one plus the minimum between its right, bottom, or bottom-right tile
       let adj = [grid.get(x + 1, y), grid.get(x, y + 1), grid.get(x + 1, y + 1)];
       let score = Math.min(...adj) + 1;
       grid.set(x, y, score);
