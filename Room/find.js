@@ -1,201 +1,197 @@
 "use strict";
 // READY
 if (!Room.prototype._find) {
-    Room.prototype._find = Room.prototype.find;
-    /**
-    Find all visible objects and return as an array
-
-    @param {number} type One of the FIND_* constants. Detail:
-    https://docs.screeps.com/api/#Room.find
-    @param {Object=} opts Inherited from Room.prototype.find() Detail:
-    https://docs.screeps.com/api/#Room.find
-    @return {Array} an array of all Objects which is visible to player
-    the definition of "visible":
-    https://docs.screeps.com/api/#Game.rooms
-    */
-    Room.prototype.findInAllRooms = function(type, opts) {
-        opts = _.clone(opts) || {};
-        opts.all = opts.claim = false;
-        //console.log("-Room.prototype.findInAllRooms")
-        let result = [];
-        for (const room of Object.values(Game.rooms)) {
-            result.push.apply(result, room._find(type, opts));
-            // result = result.concat(room._find(type, opts));
-        }
-        //console.log("all=" + result)
-        return result;
-    };
-    /**
-    Add caching (w/in ticks) and implement claim/random to Room.prototype.find()
-
-    @param {number} type One of the FIND_* constants.
-    @param {Object=} opts An object containing following property:
-    e.g. opts = {filter: {...conditions}, claim: true, all: true}
-    *
-    PROPERTY IMPLEMENTED (all boolean default FALSE):
-    * {cache: string} "deep", "shallow", or undefined. Shallow only cache result for current tick, deep cache last until Global reset. Detail about Global:
-    * https://docs.screeps.com/contributed/caching-overview.html#Global
-    * {claim: str} Ruturn one object & make it unavailable to further searches
-    * Setting {claim: true} will force {cache: true}
-    * {max: Function | Object | string} Simple impelent of _.max()
-    * {min: Function | Object | string} Simple impelent of _.min()
-    * Detail: https://lodash.com/docs/3.10.1#max
-    * {sort: [compareFunction]} MDN native Array.sort(). Detail:
-    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-    * {random: boolean} Return one random object, using Math.random()
-    * {all: boolean} Find in all (visible) rooms. More about "visible":
-    * https://docs.screeps.com/api/#Game.rooms
-    * {filter: Object} Native features. Detail:
-    * https://docs.screeps.com/api/#Room.find
-    @overwrite
-
-    @return {Array.<Object>} Same as Room.prototype.find(type, [opts]) Detail:
-    https://docs.screeps.com/api/#Room.find
-    */
-    Room.prototype.find = function(type, opts) {
-        // Arguments handling
-        let result = [];
-        let cacheName = type;
-        opts = opts || {};
-        if (typeof opts.cache === "string") opts.cache.toLowerCase();
-        //opts.cache = opts.claim = false; // MONKEY PATCH
-        opts.random = opts.sort ? false : opts.random;
-        opts.cache = opts.claim ? "deep" : opts.sort ? true : opts.cache;
-        const methodFind = opts.all ? "findInAllRooms" : "_find";
-        if (opts.debug) console.log("-Room.prototype.find", this.name)
-        if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts))
-        if (type === FIND_SOURCES || type === FIND_MINERALS) {
-            // Handle stationary harvest vs remote harvest
-        }
-        if (opts.debug) console.log("cache:" + Boolean(opts.cache) + " filter:" + Boolean(opts.filter) + " random:" + Boolean(opts.random) + " claim:" + Boolean(opts.claim));
-        if (!opts.cache) {
-            result = this[methodFind](type, opts);
-        } else {
-            // Generate identifier for cache
-            cacheName += opts.filter ? opts.filter.toString().replace(/\s+/g, "").hashCode() : 0;
-            cacheName += opts.cache === "deep" ? 1 : 0;
-            cacheName = opts.all ? cacheName.toString() : this.name + cacheName;
-            if (opts.debug) console.log("defining cacheName: ", cacheName)
-            // global.find[cacheName] temporary cache, reset each tick
-            // global.found[cacheName] long-term cache, reset when global reset
-            if (!global.found) global.found = {};
-            if (!global.find || global.find.timestamp !== Game.time) { // Check the time of temp cache
-                global.find = {
-                    timestamp: Game.time
-                };
-            };
-            if (!global.find[cacheName]) { // If there's no temp cache
-                if (!global.found[cacheName] || !global.found[cacheName].length) { // If there's no long-term cache
-                    global.found[cacheName] = this[methodFind](type, opts).map(o => {
-                        return {
-                            id: o.id,
-                            pos: o.pos
-                        };
-                    })
-                    if (opts.debug) console.log("global.found[cacheName]", global.found[cacheName])
-                }
-                global.find[cacheName] = global.found[cacheName].map(o => {
-                    return Game.getObjectById(o.id) || {
-                        id: o.id,
-                        pos: new RoomPosition(o.pos.x, o.pos.y, o.pos.roomName)
-                    };
-                })
-            }
-            if (opts.claim) {
-                global.found[cacheName].forEach(o => new RoomVisual(o.pos.roomName).circle(o.pos.x, o.pos.y, {
-                    color: "#000000"
-                }))
-                // new RoomVisual(this.name).circle(this.pos.x, this.pos.y, {
-                //     color: "#7CFC00"
-                // });
-            }
-            result = global.find[cacheName];
-        }
-        if (opts.debug) console.log("result=" + result + " opts=" + JSON.stringify(opts))
-        // Generate a random position & get the object of that position
-        let i = 0;
-        if (opts.random) {
-            i = ~~(Math.random() * result.length);
-            result = result[i];
-            if (opts.debug) console.log("random: " + " i=" + i + " result=" + result)
-        }
-        // DEPRECATED
-        if (opts.sort && result.length) {
-            result = result.sort(opts.sort);
-            if (opts.debug) console.log("resultID" + result.id)
-            i = opts.cache ? global.find[cacheName].indexOf(result.id) : 0;
-        }
-        // Check for maximum or minimum
-        if ((opts.max ? 1 : 0) ^ (opts.min ? 1 : 0) && result.length) {
-            if (opts.max) {
-                result = _.max(result, opts.max);
-            }
-            if (opts.min) {
-                result = _.min(result, opts.min);
-            }
-            i = opts.cache ? global.find[cacheName].indexOf(result.id) : 0
-            if (i < 0) i = 0;
-            if (opts.debug) console.log("Max/Min: " + opts.max ? "max" : "min" + result)
-            if (typeof result === "number") {
-                result = undefined;
-                console.log("[ERROR] Room.find() opts.max=" + (opts.max ? opts.max.toString() : "") + " opts.min=" + (opts.min ? opts.min.toString() : "") + " filter=" + (opts.filter ? opts.filter.toString() : "" + " result-" + result))
-            }
-        }
-        // Check for opts: {claim: true}
-        if (opts.claim) {
-            // Remove the object from cache
-            result = global.find[cacheName].splice(i, 1);
-            global.found[cacheName].splice(i, 1);
-        }
-        return Array.isArray(result) ? result : [result];
+  Room.prototype._find = Room.prototype.find;
+  /**
+   * Find all visible objects and return as an array
+   *
+   * @method
+   * @param  {number} type One of the FIND_* constants.
+   * @param  {Object=} opts Inherited from Room.prototype.find()
+   * @see https://docs.screeps.com/api/#Room.find
+   * @return {Array} an array of all Objects which is visible to player
+   the definition of "visible":
+   * @see https://docs.screeps.com/api/#Game.rooms
+   */
+  Room.prototype.findInAllRooms = function(type, opts) {
+    opts = _.clone(opts) || {};
+    opts.all = opts.claim = false;
+    //console.log("-Room.prototype.findInAllRooms")
+    let result = [];
+    for (const room of Object.values(Game.rooms)) {
+      result.push.apply(result, room._find(type, opts));
+      // result = result.concat(room._find(type, opts));
     }
-};
-/**
-This is a method to return the closest object based on priority then distance, null otherwise
-
-@param {number | Array.<Object>} type One of the FIND_* constants OR An array of room's objects or RoomPosition objects. Detail:
-https://docs.screeps.com/api/#Room.find
-@param {Object=} opts Inherited from Room.prototype.find(). See JSdoc above for detail
-
-PROPERTY IMPLEMENTED (default FALSE):
-{byPath: boolean} Find closest object by path, otherwise by range
-{strict: boolean} Strict mode. If false, an random object will be return if no RoomObject matches
-{...} More native feature. Detail:
-https://docs.screeps.com/api/#Room.find
-@param {Array.<string>} priority An array of STRUCTURE_* or RESOURCE_* constant.
-e.g. [STRUCTURE_EXTENSION, STRUCTURE_SPAWN, ...]
-
-@return {Object} The closest object based on priority then range.
-Or a random object as if type, opts were passed into Room.find()
-*/
-//Room.findClosestByPriority(FIND_MY_CONSTRUCTION_SITES, {cache:true}, [STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_ROAD])
-RoomPosition.prototype.findClosestByPriority = function(type, opts, priority) {
+    //console.log("all=" + result)
+    return result;
+  };
+  /**
+   * Add caching (w/in ticks) and implement claim/random to Room.prototype.find()
+   *
+   * @method
+   * @overwrite
+   * @param {number} type One of the FIND_* constants.
+   * @param {Object=} opts An object containing following property:
+   * e.g. opts = {filter: {...conditions}, claim: true, all: true}
+   * PROPERTY IMPLEMENTED (all boolean default FALSE):
+   * {cache: string} "deep", "shallow", or undefined. Shallow only cache result for current tick, deep cache last until Global reset. Detail about Global:
+   * @see https://docs.screeps.com/contributed/caching-overview.html#Global
+   * {claim: str} Ruturn one object & make it unavailable to further searches
+   * Setting {claim: true} will force {cache: true}
+   * {max: Function | Object | string} Simple impelent of _.max()
+   * {min: Function | Object | string} Simple impelent of _.min()
+   * Detail: https://lodash.com/docs/3.10.1#max
+   * {sort: [compareFunction]} MDN native Array.sort(). Detail:
+   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+   * {random: boolean} Return one random object, using Math.random()
+   * {all: boolean} Find in all (visible) rooms. More about "visible":
+   * https://docs.screeps.com/api/#Game.rooms
+   * {filter: Object} Native features. Detail:
+   * https://docs.screeps.com/api/#Room.find
+   * @return {Array.<Object>} Same as Room.prototype.find(type, [opts])
+   * @see https://docs.screeps.com/api/#Room.find
+   */
+  Room.prototype.find = function(type, opts) {
     // Arguments handling
-    if (opts.debug) console.log("-RoomPosition.prototype.findClosestByPriority")
-    if (Array.isArray(opts) && !priority) {
-        priority = opts;
-        opts = {};
+    let result = [];
+    let cacheName = type;
+    opts = opts || {};
+    if (typeof opts.cache === "string") opts.cache.toLowerCase();
+    //opts.cache = opts.claim = false; // MONKEY PATCH
+    opts.random = opts.sort ? false : opts.random;
+    opts.cache = opts.claim ? "deep" : opts.sort ? true : opts.cache;
+    const methodFind = opts.all ? "findInAllRooms" : "_find";
+    if (opts.debug) console.log("-Room.prototype.find", this.name)
+    if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts))
+    if (type === FIND_SOURCES || type === FIND_MINERALS) {
+      // Handle stationary harvest vs remote harvest
     }
-    opts.claim = opts.random = opts.sort = false; // Idiot prevention (mostly me)
-    const methodFindClosestBy = (opts.byPath || opts.all) ? "findClosestByPath" : "findClosestByRange";
-    if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts) + " List=" + priority)
-    const roomObjects = Game.rooms[this.roomName].find(type, opts);
-    if (opts.debug) console.log("roomObjects=", roomObjects)
-    if (!roomObjects.length) return;
-    // Figuring out whether it's finding structures or resources
-    const typeConst = roomObjects[0].resourceType ? "resourceType" : "structureType"
-    if (opts.debug) console.log("typeConst=" + typeConst + " typeof=" + typeof typeConst);
-    for (const element of priority) { // Loop through priority
-        if (roomObjects.some(o => o[typeConst] === element)) {
-            // Run filter only if it hit
-            const oneType = roomObjects.filter(o => o[typeConst] === element);
-            // Return the closest target
-            const result = this[methodFindClosestBy](oneType) || this.findClosestByRange(oneType); // PROMLEMATIC
-            if (opts.debug) console.log("oneType=" + oneType + " result=" + result);
-            return result;
+    if (opts.debug) console.log("cache:" + Boolean(opts.cache) + " filter:" + Boolean(opts.filter) + " random:" + Boolean(opts.random) + " claim:" + Boolean(opts.claim));
+    if (!opts.cache) {
+      result = this[methodFind](type, opts);
+    } else {
+      // Generate identifier for cache
+      cacheName += opts.filter ? opts.filter.toString().replace(/\s+/g, "").hashCode() : 0;
+      cacheName += opts.cache === "deep" ? 1 : 0;
+      cacheName = opts.all ? cacheName.toString() : this.name + cacheName;
+      if (opts.debug) console.log("defining cacheName: ", cacheName)
+      // global.find[cacheName] temporary cache, reset each tick
+      // global.found[cacheName] long-term cache, reset when global reset
+      if (!global.found) global.found = {};
+      if (!global.find || global.find.timestamp !== Game.time) { // Check the time of temp cache
+        global.find = {
+          timestamp: Game.time
+        };
+      };
+      if (!global.find[cacheName]) { // If there's no temp cache
+        if (!global.found[cacheName] || !global.found[cacheName].length) { // If there's no long-term cache
+          global.found[cacheName] = this[methodFind](type, opts).map(o => {
+            return {
+              id: o.id,
+              pos: o.pos
+            };
+          })
+          if (opts.debug) console.log("global.found[cacheName]", global.found[cacheName])
         }
+        global.find[cacheName] = global.found[cacheName].map(o => {
+          return Game.getObjectById(o.id) || {
+            id: o.id,
+            pos: new RoomPosition(o.pos.x, o.pos.y, o.pos.roomName)
+          };
+        })
+      }
+      if (opts.claim) {
+        global.found[cacheName].forEach(o => new RoomVisual(o.pos.roomName).circle(o.pos.x, o.pos.y, {
+          color: "#000000"
+        }))
+        // new RoomVisual(this.name).circle(this.pos.x, this.pos.y, {
+        //     color: "#7CFC00"
+        // });
+      }
+      result = global.find[cacheName];
     }
-    return opts.strict ? undefined : roomObjects[~~(Math.random() * roomObjects.lengthS)];
+    if (opts.debug) console.log("result=" + result + " opts=" + JSON.stringify(opts))
+    // Generate a random position & get the object of that position
+    let i = 0;
+    if (opts.random) {
+      i = ~~(Math.random() * result.length);
+      result = result[i];
+      if (opts.debug) console.log("random: " + " i=" + i + " result=" + result)
+    }
+    // DEPRECATED
+    if (opts.sort && result.length) {
+      result = result.sort(opts.sort);
+      if (opts.debug) console.log("resultID" + result.id)
+      i = opts.cache ? global.find[cacheName].indexOf(result.id) : 0;
+    }
+    // Check for maximum or minimum
+    if ((opts.max ? 1 : 0) ^ (opts.min ? 1 : 0) && result.length) {
+      if (opts.max) {
+        result = _.max(result, opts.max);
+      }
+      if (opts.min) {
+        result = _.min(result, opts.min);
+      }
+      i = opts.cache ? global.find[cacheName].indexOf(result.id) : 0
+      if (i < 0) i = 0;
+      if (opts.debug) console.log("Max/Min: " + opts.max ? "max" : "min" + result)
+      if (typeof result === "number") {
+        result = undefined;
+        console.log("[ERROR] Room.find() opts.max=" + (opts.max ? opts.max.toString() : "") + " opts.min=" + (opts.min ? opts.min.toString() : "") + " filter=" + (opts.filter ? opts.filter.toString() : "" + " result-" + result))
+      }
+    }
+    // Check for opts: {claim: true}
+    if (opts.claim) {
+      // Remove the object from cache
+      result = global.find[cacheName].splice(i, 1);
+      global.found[cacheName].splice(i, 1);
+    }
+    return Array.isArray(result) ? result : [result];
+  }
+}
+/**
+ * This is a method to return the closest object based on priority then distance, null otherwise
+ *
+ * @method
+ * @param  {number | Array.<Object>} type     One of the FIND_* constants OR An array of room's objects or RoomPosition objects.
+ * @see https://docs.screeps.com/api/#Room.find
+ * @param  {Object=} opts     Inherited from Room.prototype.find(). See JSdoc above for detail
+ * PROPERTY IMPLEMENTED (default FALSE):
+ * {byPath: boolean} Find closest object by path, otherwise by range
+ * {strict: boolean} Strict mode. If false, an random object will be return if no RoomObject matches
+ * {...} More native feature.
+ * @see https://docs.screeps.com/api/#Room.find
+ * @param  {Array.<string>} priority An array of STRUCTURE_* or RESOURCE_* constant.
+ * e.g. [STRUCTURE_EXTENSION, STRUCTURE_SPAWN, ...]
+ * @return {Object}          The closest object based on priority then range. Or a random object as if type, opts were passed into Room.find()
+ */
+RoomPosition.prototype.findClosestByPriority = function(type, opts, priority) {
+  // Arguments handling
+  if (opts.debug) console.log("-RoomPosition.prototype.findClosestByPriority")
+  if (Array.isArray(opts) && !priority) {
+    priority = opts;
+    opts = {};
+  }
+  opts.claim = opts.random = opts.sort = false; // Idiot prevention (mostly me)
+  const methodFindClosestBy = (opts.byPath || opts.all) ? "findClosestByPath" : "findClosestByRange";
+  if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts) + " List=" + priority)
+  const roomObjects = Game.rooms[this.roomName].find(type, opts);
+  if (opts.debug) console.log("roomObjects=", roomObjects)
+  if (!roomObjects.length) return;
+  // Figuring out whether it's finding structures or resources
+  const typeConst = roomObjects[0].resourceType ? "resourceType" : "structureType"
+  if (opts.debug) console.log("typeConst=" + typeConst + " typeof=" + typeof typeConst);
+  for (const element of priority) { // Loop through priority
+    if (roomObjects.some(o => o[typeConst] === element)) {
+      // Run filter only if it hit
+      const oneType = roomObjects.filter(o => o[typeConst] === element);
+      // Return the closest target
+      const result = this[methodFindClosestBy](oneType) || this.findClosestByRange(oneType); // PROMLEMATIC
+      if (opts.debug) console.log("oneType=" + oneType + " result=" + result);
+      return result;
+    }
+  }
+  return opts.strict ? undefined : roomObjects[~~(Math.random() * roomObjects.lengthS)];
 };
 /**
 Generate a 32 bit hash from string. Used in Room.find()
@@ -203,13 +199,13 @@ https://stackoverflow.com/a/7616484
 @return {number} a hashcode, or 0 if the string is empty
 */
 String.prototype.hashCode = function() {
-    let hash = 0,
-        i, chr;
-    if (this.length === 0) return hash;
-    for (i = 0; i < this.length; i++) {
-        chr = this.charCodeAt(i);
-        hash = ((hash << 5) - hash) + chr;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
+  let hash = 0,
+    i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr = this.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
 };
