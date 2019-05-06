@@ -49,7 +49,7 @@ Room.prototype.findSpaceForSquare = function(sideLength) {
   let terrain = this.getTerrain();
   let spots = [];
   let y = 50;
-  // Iteration starts from bottom right ⬅⬅⬆⬆
+  // Iteration from right to left, bottom to top. ⬅︎⬅︎⬆︎
   while (y--) {
     let x = 50;
     nextPos: while (x--) {
@@ -66,8 +66,12 @@ Room.prototype.findSpaceForSquare = function(sideLength) {
           continue nextPos;
         }
       }
+<<<<<<< HEAD
 
       // The `score` of a tile is one plus the minimum between its right, bottom, or bottom-right tile
+=======
+      // The `score` of a tile is the minimum of its right, bottom, and bottom-right tile
+>>>>>>> 73fdcd2068b5eb2d847dd244eb15c31acbf44511
       let adj = [grid.get(x + 1, y), grid.get(x, y + 1), grid.get(x + 1, y + 1)];
       let score = Math.min(...adj) + 1;
       grid.set(x, y, score);
