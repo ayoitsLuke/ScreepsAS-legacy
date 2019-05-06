@@ -213,7 +213,7 @@ StructureSpawn.prototype.getBodyParts = function(budget, base, dlc) {
   //console.log("base=" + base + " dlc=" + dlc)
   //console.log("budget=" + budget + " baseCost=" + baseCost + " dlcCost=" + dlcCost);
   let dlcCount = (budget - baseCost) / dlcCost;
-  dlcCount = dlcCount < 0 ? 0 : dlcCount > MAX_CREEP_SIZE - base.length ? MAX_CREEP_SIZE - base.length : ~~dlcCount;
+  dlcCount = dlcCount < 0 ? 0 : (dlcCount * dlc.length > MAX_CREEP_SIZE - base.length) ? ~~((MAX_CREEP_SIZE - base.length) / dlc.length) : ~~dlcCount;
   //console.log(dlcCount);
   while (dlcCount--) {
     dlcParts.push(...dlc);

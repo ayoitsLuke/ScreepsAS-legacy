@@ -62,7 +62,13 @@ Room.prototype.init = function() {
     }
     */
 };
-
-function findEmptySquareInRoom() {
+/**
+ * [findEmptySquareInRoom description]
+ * @method findEmptySquareInRoom
+ * @param  {number}              sideLength [description]
+ * @param  {string}              roomName   [description]
+ * @return {[type]}                         [description]
+ */
+function findEmptySquareInRoom(sideLength, roomName) {
 
 }
