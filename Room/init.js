@@ -41,7 +41,7 @@ Room.prototype.init = function() {
     if (this.controller && this.controller.my && this.controller.level === 1) {
         const sources = this.find(FIND_SOURCES);
         for (s of sources) {
-            // find closest square  
+            // find closest square
         }
     }
     /*
@@ -62,3 +62,7 @@ Room.prototype.init = function() {
     }
     */
 };
+
+function findEmptySquareInRoom() {
+
+}
