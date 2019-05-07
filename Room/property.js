@@ -44,7 +44,8 @@ Object.defineProperties(Room.prototype, {
         // let space = 0; // Space per source
         // this.find(FIND_SOURCES).forEach(s => space += s.freeSpaceCount);
         // this.memory.sourceSpace = space;
-        this.memory.sourceSpace = this.find(FIND_SOURCES).reduce((totalSpace, s) => totalSpace + s.freeSpaceCount, 0); // h
+        this.memory.sourceSpace = this.find(FIND_SOURCES)
+          .reduce((totalSpace, s) => totalSpace + s.freeSpaceCount, 0); // h
       }
       return this.memory.sourceSpace;
     }
@@ -54,9 +55,7 @@ Object.defineProperties(Room.prototype, {
     // configurable: true,
     get: function() {
       if (!this._productionPerTick) {
-        let ppt = 0; // Production per tick
-        this.find(FIND_SOURCES).forEach(s => ppt += s.productionPerTick);
-        this._productionPerTick = ppt
+        this._productionPerTick = _.sum(this.find(FIND_SOURCES), s => s.productionPerTick);
       }
       return this._productionPerTick;
     }
@@ -68,10 +67,11 @@ Object.defineProperties(Room.prototype, {
       if (!this._productivity) {
         let prod = 0; // Production per tick
         let sc = 0; // Source count
-        this.find(FIND_SOURCES).forEach(s => {
-          prod += s.productivity;
-          sc++;
-        });
+        this.find(FIND_SOURCES)
+          .forEach(s => {
+            prod += s.productivity;
+            sc++;
+          });
         this._productivity = prod / sc;
       }
       return this._productivity;
@@ -86,7 +86,7 @@ Object.defineProperties(Room.prototype, {
   refillSpeed: {
     configurable: true,
     get: function() {
-    //
+      //
     }
   },
   refillData: { // need to rename & fix this monkey coding

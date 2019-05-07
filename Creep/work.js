@@ -7,7 +7,7 @@ Creep.prototype.getTask = function() {
     this.memory.task
 };
 Creep.prototype.doTask = function() {
-    this.say(TASK[this.memory.task]);
+    this.say(TASK2SAY[this.memory.task]);
     if (!this.memory.task) this.memory.target = undefined;
     // if (this.ticksToLive === CREEP_SPAWN_TIME * this.body.length) {
     //     Game.rooms[this.memory.home].memory.spawnQueue.push({

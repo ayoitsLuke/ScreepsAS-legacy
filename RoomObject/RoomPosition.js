@@ -28,7 +28,8 @@ RoomPosition.prototype.getRangeTo = function(firstArg, secondArg) {
  * @return {[type]}          [description]
  */
 function roomNameToXY(name) {
-  const chars = name.toUpperCase().split(/(\d+)/);
+  const chars = name.toUpperCase()
+    .split(/(\d+)/);
   return [chars[0] === "W" ? -chars[1] - 1 : chars[1], chars[2] === "N" ? -chars[3] - 1 : chars[3]];
 };
 /**

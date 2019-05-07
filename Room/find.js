@@ -10,19 +10,20 @@ if (!Room.prototype._find) {
    * @param  {Object=} opts Inherited from Room.prototype.find()
    * @see https://docs.screeps.com/api/#Room.find
    * @return {Array} an array of all Objects which is visible to player
-   the definition of "visible":
+   * the definition of "visible":
    * @see https://docs.screeps.com/api/#Game.rooms
    */
   Room.prototype.findInAllRooms = function(type, opts) {
-    opts = _.clone(opts) || {};
-    opts.all = opts.claim = false;
-    //console.log("-Room.prototype.findInAllRooms")
+    opts = opts || {};
     let result = [];
+    if (opts.debug) console.log("-Room.prototype.findInAllRooms");
+    filter = opts.filter;
     for (const room of Object.values(Game.rooms)) {
-      result.push.apply(result, room._find(type, opts));
-      // result = result.concat(room._find(type, opts));
+      result.push(...room._find(type, {
+        filter
+      }));
     }
-    //console.log("all=" + result)
+    if (opts.debug) console.log("all=" + result);
     return result;
   };
   /**
@@ -41,8 +42,6 @@ if (!Room.prototype._find) {
    * {max: Function | Object | string} Simple impelent of _.max()
    * {min: Function | Object | string} Simple impelent of _.min()
    * Detail: https://lodash.com/docs/3.10.1#max
-   * {sort: [compareFunction]} MDN native Array.sort(). Detail:
-   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
    * {random: boolean} Return one random object, using Math.random()
    * {all: boolean} Find in all (visible) rooms. More about "visible":
    * https://docs.screeps.com/api/#Game.rooms
@@ -53,30 +52,31 @@ if (!Room.prototype._find) {
    */
   Room.prototype.find = function(type, opts) {
     // Arguments handling
+    opts = opts || {};
+    if (opts.debug) console.log("-Room.prototype.find", this.name);
     let result = [];
     let cacheName = type;
-    opts = opts || {};
     if (typeof opts.cache === "string") opts.cache.toLowerCase();
-    //opts.cache = opts.claim = false; // MONKEY PATCH
-    opts.random = opts.sort ? false : opts.random;
-    opts.cache = opts.claim ? "deep" : opts.sort ? true : opts.cache;
+    opts.cache = opts.claim ? "deep" : opts.cache;
     const methodFind = opts.all ? "findInAllRooms" : "_find";
-    if (opts.debug) console.log("-Room.prototype.find", this.name)
     if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts))
     if (type === FIND_SOURCES || type === FIND_MINERALS) {
       // Handle stationary harvest vs remote harvest
     }
-    if (opts.debug) console.log("cache:" + Boolean(opts.cache) + " filter:" + Boolean(opts.filter) + " random:" + Boolean(opts.random) + " claim:" + Boolean(opts.claim));
+    if (opts.debug) console.log("cache:" + opts.cache + " random:" + Boolean(opts.random) + " claim:" + Boolean(opts.claim) + " filter:" + JSON.stringify(opts.filter));
     if (!opts.cache) {
       result = this[methodFind](type, opts);
     } else {
       // Generate identifier for cache
-      cacheName += opts.filter ? opts.filter.toString().replace(/\s+/g, "").hashCode() : 0;
-      cacheName += opts.cache === "deep" ? 1 : 0;
+      cacheName += opts.filter ? hashCode(opts.filter.toString()
+        .replace(/\s+/g, "")) : 0;
+      cacheName *= opts.cache === "deep" ? 1 : -1;
       cacheName = opts.all ? cacheName.toString() : this.name + cacheName;
       if (opts.debug) console.log("defining cacheName: ", cacheName)
-      // global.find[cacheName] temporary cache, reset each tick
-      // global.found[cacheName] long-term cache, reset when global reset
+      /*
+      global.find[cacheName] temporary cache, reset each tick
+      global.found[cacheName] long-term cache, reset when global reset
+       */
       if (!global.found) global.found = {};
       if (!global.find || global.find.timestamp !== Game.time) { // Check the time of temp cache
         global.find = {
@@ -85,12 +85,13 @@ if (!Room.prototype._find) {
       };
       if (!global.find[cacheName]) { // If there's no temp cache
         if (!global.found[cacheName] || !global.found[cacheName].length) { // If there's no long-term cache
-          global.found[cacheName] = this[methodFind](type, opts).map(o => {
-            return {
-              id: o.id,
-              pos: o.pos
-            };
-          })
+          global.found[cacheName] = this[methodFind](type, opts)
+            .map(o => {
+              return {
+                id: o.id,
+                pos: o.pos
+              };
+            })
           if (opts.debug) console.log("global.found[cacheName]", global.found[cacheName])
         }
         global.find[cacheName] = global.found[cacheName].map(o => {
@@ -101,9 +102,10 @@ if (!Room.prototype._find) {
         })
       }
       if (opts.claim) {
-        global.found[cacheName].forEach(o => new RoomVisual(o.pos.roomName).circle(o.pos.x, o.pos.y, {
-          color: "#000000"
-        }))
+        global.found[cacheName].forEach(o => new RoomVisual(o.pos.roomName)
+          .circle(o.pos.x, o.pos.y, {
+            color: "#000000"
+          }))
         // new RoomVisual(this.name).circle(this.pos.x, this.pos.y, {
         //     color: "#7CFC00"
         // });
@@ -194,11 +196,14 @@ RoomPosition.prototype.findClosestByPriority = function(type, opts, priority) {
   return opts.strict ? undefined : roomObjects[~~(Math.random() * roomObjects.lengthS)];
 };
 /**
-Generate a 32 bit hash from string. Used in Room.find()
-https://stackoverflow.com/a/7616484
-@return {number} a hashcode, or 0 if the string is empty
-*/
-String.prototype.hashCode = function() {
+ * Generate a 32 bit hash from string. Used in Room.find()
+ *
+ * @see https://stackoverflow.com/a/7616484
+ * @method hashCode
+ * @param  {string} string The string to turn in hash code
+ * @return {number} a hashcode, or 0 if the string is empty
+ */
+function hashCode(string) {
   let hash = 0,
     i, chr;
   if (this.length === 0) return hash;

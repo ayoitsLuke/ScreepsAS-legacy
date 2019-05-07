@@ -2,10 +2,12 @@
 Room.prototype.setSpawnQueue = function() {
   if (!this.find(FIND_MY_SPAWNS, {
       cache: "deep"
-    }).length) return;
+    })
+    .length) return;
   if (!this.memory.spawnQueue) this.memory.spawnQueue = [];
   // const creepsInRoom = _.groupBy(this.find(FIND_MY_CREEPS), "memory.role");
-  const creepsByRole = _.groupBy(Object.values(Game.creeps).filter(c => c.memory.home === this.name), "memory.role");
+  const creepsByRole = _.groupBy(Object.values(Game.creeps)
+    .filter(c => c.memory.home === this.name), "memory.role");
   // console.log("Spawn queue: " + this.memory.spawnQueue.map(o => o.role));
   // Emergency Spawn if all creeps died
   if (((!creepsByRole["staticHarvester"] || !creepsByRole["scavenger"]) && this.memory.spawnQueue[0] && !this.memory.spawnQueue[0].urgent)) {
@@ -13,12 +15,17 @@ Room.prototype.setSpawnQueue = function() {
   }
   // Normal spawns
   if (!this.memory.spawnQueue.length) {
-    const sourcesCount = this.find(FIND_SOURCES).length;
+    const sourcesCount = this.find(FIND_SOURCES)
+      .length;
     // Scavenger
-    const carryPartsNeeded = this.find(FIND_DROPPED_RESOURCES).reduce((carryCount, r) => carryCount + ~~(r.amount / 50), 0); // how many CARRY part needed to pick up all drpped resource
+    const carryPartsNeeded = _.sum(this.find(FIND_DROPPED_RESOURCES, {
+        cache: "deep"
+      }),
+      r => ~~(r.amount / 50)); // how many CARRY part needed to pick up all drpped resource
     const maxCarryEachCreep = this.find(FIND_MY_SPAWNS, {
-      cache: "deep"
-    })[0].getBodyFor("scavenger", false).reduce((carryCount, p) => carryCount + (p == CARRY), 0); //the max amount of CARRY one scavenger can have.
+        cache: "deep"
+      })[0].getBodyFor("scavenger", false)
+      .reduce((carryCount, p) => carryCount + (p === CARRY), 0); //the max amount of CARRY one scavenger can have.
     let scavengerNeeded = ~~(carryPartsNeeded / maxCarryEachCreep);
     if (scavengerNeeded > 2.5 * sourcesCount) scavengerNeeded = Math.ceil(2.5 * sourcesCount);
     // let tcn = 0; // total CARRY needed
@@ -56,7 +63,8 @@ Room.prototype.setSpawnQueue = function() {
         });
       }
       // Builder
-      if (this.productivity > 1 && !creepsByRole["builder"] && Object.values(Game.constructionSites).length) {
+      if (this.productivity > 1 && !creepsByRole["builder"] && Object.values(Game.constructionSites)
+        .length) {
         this.memory.spawnQueue.push({
           role: "builder"
         });

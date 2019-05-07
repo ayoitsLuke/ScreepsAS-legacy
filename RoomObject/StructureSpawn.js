@@ -1,8 +1,10 @@
 "use strict";
 /**
-Check spawnQueue and spawn creeps
-
-*/
+ * Check spawnQueue and spawn creeps
+ *
+ * @method
+ * @return {[type]} [description]
+ */
 StructureSpawn.prototype.work = function() {
   if (this.spawning) {
     this.room.visual.text('🐣' + this.spawning.name, this.pos.x + 1, this.pos.y, {
@@ -20,28 +22,35 @@ StructureSpawn.prototype.work = function() {
   }
 };
 /**
+ * [description]
+ *
+ * @method
+ * @return {[type]} [description]
  */
 StructureSpawn.prototype.spawnArmy = function() {
   console.log("[stub] StructureSpawn.prototype.spawnArmy")
   this.spawnCivilian();
 }
 /**
-Check spawnQueue and spawn creeps
-
-*/
+ * Check spawnQueue and spawn creeps
+ *
+ * @method
+ * @return {[type]} [description]
+ */
 StructureSpawn.prototype.spawnCivilian = function() {
-  const queue = this.room.memory.spawnQueue ? this.room.memory.spawnQueue : this.room.memory.spawnQueue = [];
   // pre-Spawn check
-  if (!queue.length) {
+  if (!this.room.memory.spawnQueue.length) {
+    this.room.memory.spawnQueue = [];
     this.room.memory.preSpawn = false;
   } else {
     this.room.memory.preSpawn = true;
     // NOTE: Room.memory.spawnQueue is an Object[]. eg. [{role: "role", target: {some target}}, {}, {}]
-    const seed = queue[0];
+    const seed = this.room.memory.spawnQueue[0];
     // Special case: all creeps die out. Therefore max energy = 300, which < room.energyCapacityAvailable
     seed.urgent = seed.urgent || ((seed.role === "staticHarvester" || seed.role === "scavenger") ? !this.room.find(FIND_MY_CREEPS, {
-      filter: c => c.memory.role === seed.role
-    }).length : false);
+        filter: c => c.memory.role === seed.role
+      })
+      .length : false);
     const body = this.getBodyFor(seed.role, seed.urgent);
     if (!body.length && !seed.urgent) {
       this.room.memory.spawnQueue.shift();
@@ -53,23 +62,25 @@ StructureSpawn.prototype.spawnCivilian = function() {
       home: this.room.name
     });
     console.log("[" + this.name + "] is spawning: " + seed.role + (seed.urgent ? " (urgent)" : ""));
-    if (OK === this.spawnCreep(body, name, { // PROBLEMATIC: 2 spawn
-        memory,
-        energyStructures: this.room.find(FIND_MY_STRUCTURES, {
-          filter: s => s.structureType === STRUCTURE_EXTENSION && s.isActive(),
-          cache: "deep"
-        }).concat(this.room.find(FIND_MY_STRUCTURES, {
-          filter: s => s.structureType === STRUCTURE_SPAWN && s.isActive(),
-          cache: "deep"
-        }))
-      })) {
+    const spawnMsg = this.spawnCreep(body, name, { // PROBLEMATIC: 2 spawn
+      memory,
+      energyStructures: [...this.room.find(FIND_MY_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_EXTENSION && s.isActive(),
+        cache: "deep"
+      }), ...this.room.find(FIND_MY_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_SPAWN && s.isActive(),
+        cache: "deep"
+      })]
+    });
+    if (spawnMsg === OK) {
       if (!seed.urgent) {
         this.room.find(FIND_MY_CREEPS, {
-          filter: c => c.memory.role === seed.role && c.memory.urgent
-        }).forEach(c => {
-          c.memory.task = "recycle";
-          c.memory.target = undefined;
-        });
+            filter: c => c.memory.role === seed.role && c.memory.urgent
+          })
+          .forEach(c => {
+            c.memory.task = "recycle";
+            c.memory.target = undefined;
+          });
       }
       // RENAME!
       this.room.refillSpeed;
@@ -80,13 +91,13 @@ StructureSpawn.prototype.spawnCivilian = function() {
   }
 }
 /**
-
-@param {string} role The role of the spawning creep
-@param {boolean} urgent
-Return body parts based on, if set true, energy currently stored, otherwise max capacity
-
-@return {Array.<string>} An array of body part constants
-*/
+ * [description]
+ *
+ * @method
+ * @param  {string} role The role of the spawning creep
+ * @param  {boolean} urgent Return body parts based on, if true, energy currently stored, otherwise max capacity
+ * @return {Array.<string>} An array describing the new creep’s body
+ */
 StructureSpawn.prototype.getBodyFor = function(role, urgent) {
   //user BODYPART_COST
   let budget = urgent ? this.room.energyAvailable > SPAWN_ENERGY_CAPACITY ? this.room.energyAvailable : SPAWN_ENERGY_CAPACITY : this.room.energyCapacityAvailable;
@@ -147,7 +158,8 @@ StructureSpawn.prototype.getBodyFor = function(role, urgent) {
       base = [CARRY, WORK, MOVE];
       if (this.room.find(FIND_MY_STRUCTURES, {
           filter: s => s.structureType === STRUCTURE_LINK && s.belonging === "controller"
-        }).length) {
+        })
+        .length) {
         dlc = [WORK, WORK, MOVE];
       } else {
         dlc = [CARRY, CARRY, WORK, WORK, MOVE];
@@ -194,21 +206,19 @@ StructureSpawn.prototype.getBodyFor = function(role, urgent) {
   return this.getBodyParts(budget, base, dlc)
 };
 /**
-
-* @param {number} budget The energy
-* @param {Array.<number>} base
-* @param {Array.<number>} dlc
-
-* @return {Array.<string>} An array of body part constants
-*/
+ *
+ *
+ * @method
+ * @param {number} budget The upper energy limit to spend of this creep
+ * @param {Array.<string>} base
+ * @param {Array.<string>} dlc
+ * @return {Array.<string>} An array of body part constants
+ */
 StructureSpawn.prototype.getBodyParts = function(budget, base, dlc) {
-  /*
-  global.UNIT_COST = (body) => _.sum(body, p => BODYPART_COST[p.type || p]);
-  global.UNIT_BUILD_TIME = (body) => CREEP_SPAWN_TIME * body.length;
-  */
+
   let dlcParts = [];
-  const baseCost = base.reduce((totalCost, p) => totalCost + BODYPART_COST[p.type], 0)
-  const dlcCost = dlc.reduce((totalCost, p) => totalCost + BODYPART_COST[p.type], 0)
+  const baseCost = CREEP_PARTS_COST(base);
+  const dlcCost = CREEP_PARTS_COST(dlc);
   if (baseCost > budget) return [];
   //console.log("base=" + base + " dlc=" + dlc)
   //console.log("budget=" + budget + " baseCost=" + baseCost + " dlcCost=" + dlcCost);
