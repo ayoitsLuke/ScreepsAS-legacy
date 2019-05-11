@@ -105,7 +105,6 @@ StructureSpawn.prototype.getBodyFor = function(role, urgent) {
   let dlc = [];
   switch (role) {
     case "miner":
-      if (budget > 600) budget = 600;
       dlc = [WORK];
       break;
     case "stationaryWorker": // harvester, high RCL upgrader (RCL >= 5)

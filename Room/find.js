@@ -214,3 +214,113 @@ function hashCode(string) {
   }
   return hash;
 };
+/**
+ * Find all RoomPositions where fits in a square of fixed sized.
+ *
+ * @method
+ * @param  {number} sideLength the length of the side of the square
+ * @return {Array.<RoomPosition>} The top-left corner RoomPosition of all such squares
+ */
+Room.prototype.findSpaceForSquare = function(sideLength) {
+  // The index of `avoid` is the distance at which it should treat the values as obstacles
+  // For example, index 2 makes all tiles in radius 2 around the controller "unwalkable"
+  let avoid = {
+    1: [..._.map(this.find(FIND_SOURCES), s => s.pos), ..._.map(this.find(FIND_MINERALS), s => s.pos)],
+    3: [this.controller.pos]
+  };
+  let grid = new PathFinder.CostMatrix();
+  let terrain = this.getTerrain();
+  let spots = [];
+  let y = 50;
+  // Iteration from right to left, bottom to top. ⬅⬅⬆
+  while (y--) {
+    let x = 50;
+    nextPos: while (x--) {
+      // Set gird as default (0) if it's a wall
+      if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+        continue;
+      }
+      let pos = new RoomPosition(x, y, this.name);
+      // Set gird as default (0) if it's close to an object of avoidance
+      for (let r in avoid) {
+        let objs = avoid[r];
+        if (objs.find(o => o.inRangeTo(pos, r))) {
+          // move on to next RoomPosition upon finding object of avoidance
+          continue nextPos;
+        }
+      }
+      // The `score` of a tile is the minimum of its right, bottom, and bottom-right tile
+      let adj = [grid.get(x + 1, y), grid.get(x, y + 1), grid.get(x + 1, y + 1)];
+      let score = Math.min(...adj) + 1;
+      grid.set(x, y, score);
+      this.visual.text(score, pos);
+      if (score >= sideLength) spots.push(pos);
+    }
+  }
+  if (!spots.length) {
+    // no spot available
+    return false
+  }
+  return spots;
+};
+/**
+ * [description]
+ *
+ * @method
+ * @param  {RoomPosition} start The start position.
+ * @param  {object} goal A goal or goal position.
+ * @param  {[type]} roomName [description]
+ * @return {object} Same as PathFinder.search().
+ * @see https://docs.screeps.com/api/#PathFinder.search
+ */
+
+Room.prototype.planRoad = function(start, goal, roomName) {
+  // Avoid: minerals, source, existed unwalkable rObj -> set 0xff
+  // priorize: existed road/roadConstructSite -> set 1
+  // All cost = maintain cost; -> set number based on terrain; > 1
+  const plainCost = 1;
+  let grid = new PathFinder.CostMatrix();
+  if (start.pos) start = start.pos;
+  if (goal.pos) goal = goal.pos;
+  // set all wall as 150 * plain maintenance cost
+  const terrain = Game.map.getRoomTerrain(roomName) || this.getTerrain();
+  let y = 50;
+  while (y--) {
+    let x = 50;
+    while (x--) {
+      if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+        // console.log("setted")
+        grid.set(x, y, CONSTRUCTION_COST_ROAD_WALL_RATIO * plainCost);
+      }
+    }
+  }
+  if (!roomName) {
+    // set all road/construction site of road as 1.
+    [...this.find(FIND_STRUCTURES), ...this.find(FIND_CONSTRUCTION_SITES)].forEach(s => {
+      if (s.structureType === STRUCTURE_ROAD) {
+        // Favor roads
+        grid.set(s.pos.x, s.pos.y, 1);
+      } else if (s.structureType !== STRUCTURE_CONTAINER &&
+        (s.structureType !== STRUCTURE_RAMPART ||
+          !s.my)) {
+        // set unwalkable structures
+        grid.set(s.pos.x, s.pos.y, 0xff);
+      }
+    });
+    // set sources/mineral as unwalkable
+    [...this.find(FIND_SOURCES), ...this.find(FIND_MINERALS)].forEach(o => grid.set(o.pos.x, o.pos.y, 0xff));
+  }
+  const plannedRoad = PathFinder.search(
+    start, goal, {
+      roomCallback: () => grid,
+      plainCost,
+      swampCost: CONSTRUCTION_COST_ROAD_SWAMP_RATIO * plainCost,
+      maxRooms: 1
+    });
+  new RoomVisual(roomName)
+    .poly(plannedRoad.path);
+  // return plannedRoad;
+};
+
+
+// Game.rooms["W27N41"].planRoad(new RoomPosition(19,9,"W26N44"), new RoomPosition(26,4,"W26N44"),"W26N44");
