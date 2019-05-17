@@ -50,6 +50,7 @@ if (!Room.prototype._find) {
    * @return {Array.<Object>} Same as Room.prototype.find(type, [opts])
    * @see https://docs.screeps.com/api/#Room.find
    */
+
   Room.prototype.find = function(type, opts) {
     // Arguments handling
     opts = opts || {};
@@ -240,7 +241,7 @@ Room.prototype.findSpaceForSquare = function(sideLength) {
       if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
         continue;
       }
-      let pos = new RoomPosition(x, y, this.name);
+      const pos = new RoomPosition(x, y, this.name);
       // Set gird as default (0) if it's close to an object of avoidance
       for (let r in avoid) {
         let objs = avoid[r];
@@ -250,18 +251,14 @@ Room.prototype.findSpaceForSquare = function(sideLength) {
         }
       }
       // The `score` of a tile is the minimum of its right, bottom, and bottom-right tile
-      let adj = [grid.get(x + 1, y), grid.get(x, y + 1), grid.get(x + 1, y + 1)];
-      let score = Math.min(...adj) + 1;
+      const adj = [grid.get(x + 1, y), grid.get(x, y + 1), grid.get(x + 1, y + 1)];
+      const score = Math.min(...adj) + 1;
       grid.set(x, y, score);
       this.visual.text(score, pos);
       if (score >= sideLength) spots.push(pos);
     }
   }
-  if (!spots.length) {
-    // no spot available
-    return false
-  }
-  return spots;
+  return spots.length ? spots : null;
 };
 /**
  * [description]
@@ -319,7 +316,7 @@ Room.prototype.planRoad = function(start, goal, roomName) {
     });
   new RoomVisual(roomName)
     .poly(plannedRoad.path);
-  // return plannedRoad;
+  return plannedRoad;
 };
 
 

@@ -7,13 +7,14 @@
  */
 StructureSpawn.prototype.work = function() {
   if (this.spawning) {
+    align: 'left',
     this.room.visual.text('🐣' + this.spawning.name, this.pos.x + 1, this.pos.y, {
-      align: 'left',
       opacity: 0.5
     });
     // if ( this.spawning.remainingTime<=1)this.memory.;
     return;
-  } else {};
+  }
+  else {};
   // Check room's combat level & decide whether to spawn worker class or military class creeps
   if (this.room.memory.defcon < 4) {
     this.spawnArmy();
@@ -58,9 +59,10 @@ StructureSpawn.prototype.spawnCivilian = function() {
       return;
     }
     const name = seed.role + Game.shard.name.replace("shard", "\n") + this.room.name + this.name.replace("Spawn", " ") + Game.time % 10000;
-    const memory = Object.assign(seed, {
+    const memory = {
+      ...seed,
       home: this.room.name
-    });
+    };
     console.log("[" + this.name + "] is spawning: " + seed.role + (seed.urgent ? " (urgent)" : ""));
     const spawnMsg = this.spawnCreep(body, name, { // PROBLEMATIC: 2 spawn
       memory,
@@ -101,7 +103,7 @@ StructureSpawn.prototype.spawnCivilian = function() {
 StructureSpawn.prototype.getBodyFor = function(role, urgent) {
   //user BODYPART_COST
   let budget = urgent ? this.room.energyAvailable > SPAWN_ENERGY_CAPACITY ? this.room.energyAvailable : SPAWN_ENERGY_CAPACITY : this.room.energyCapacityAvailable;
-  let base = [CARRY, WORK, MOVE]; // 200 energy
+  let base = [CARRY, WORK, MOVE, MOVE]; // 200 energy
   let dlc = [];
   switch (role) {
     case "miner":
@@ -227,7 +229,8 @@ StructureSpawn.prototype.getBodyParts = function(budget, base, dlc) {
   while (dlcCount--) {
     dlcParts.push(...dlc);
   }
-  return dlcParts.sort(p => p === "tough" || p === "carry" || p === "work" ? -1 : 0); // Move all TOUGH to front
+  return dlcParts.sort(p => p === "tough" || p === "carry" || p === "work" ? -1 : 0); 
+  // Move all TOUGH to front
   /*
   var first = {};
   var order = [TOUGH, WORK, CARRY, RANGED_ATTACK, ATTACK, CLAIM, MOVE, HEAL];

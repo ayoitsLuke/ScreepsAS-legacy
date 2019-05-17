@@ -1,25 +1,24 @@
 "use strict"
 Object.defineProperties(Room.prototype, {
   global: {
-    configurable: true,
     get: function() {
-      if (_.isUndefined(global.room)) {
-        global.room = {};
+      if (_.isUndefined(global.rooms) || global.rooms === 'undefined') {
+        global.rooms = {};
       }
-      if (!_.isObject(global.room)) {
+      if (!_.isObject(global.rooms)) {
         return undefined;
       }
-      return global.room[this.name] = global.room[this.name] || {};
+      return global.rooms[this.name] = global.rooms[this.name] || {};
     },
     set: function(value) {
-      if (_.isUndefined(global.room)) {
-        global.room = {};
+      if (_.isUndefined(global.rooms) || global.rooms === 'undefined') {
+        global.rooms = {};
       }
-      if (!_.isObject(global.room)) {
-        throw new Error("Could not set room " + this.name + " global");
+      if (!_.isObject(global.rooms)) {
+        throw new Error('Could not set room memory');
       }
-      global.room[this.name] = value;
-      global.room[this.name].structureType = this.structureType;
+      global.rooms[this.name] = value;
+
     }
   },
   type: {

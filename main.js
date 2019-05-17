@@ -21,7 +21,7 @@ require("constants");
 require("work");
 //
 require("Creep.action.build");
-require("Creep.action.explore"); 
+require("Creep.action.explore");
 require("Creep.action.harvest");
 require("Creep.action.pickup");
 require("Creep.action.recharge");
@@ -68,7 +68,7 @@ module.exports.loop = function() {
                 Object.values(Game.creeps).forEach(creep => creep.work());
                 */
         /*
-        for (const name in Game.creeps) {
+        for (let name in Game.creeps) {
             let creep = Game.creeps[name];
             try {
                 creep.work();
@@ -96,7 +96,7 @@ function cache() {
     cached.creeps = Game.creeps;
     cached.rooms = Game.rooms;
     cached.droppedResources = new Array();
-    for (const r in cache.rooms) {
+    for (let r in cache.rooms) {
         console.log(r);
         cached.droppedResources.push(r.find(FIND_DROPPED_RESOURCES));
     }
@@ -159,7 +159,7 @@ function roughSizeOfObject(obj) {
             bytes += 8;
         } else if (typeof value === "object" && objectList.indexOf(value) === -1) {
             objectList.push(value);
-            for (const i in value) {
+            for (let i in value) {
                 stack.push(value[i]);
             }
         }

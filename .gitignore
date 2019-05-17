@@ -1,5 +1,6 @@
 # Credentials & Junks
 /.screeps.json
+/ScreepsAutocomplete
 # Compiled source #
 ###################
 *.com

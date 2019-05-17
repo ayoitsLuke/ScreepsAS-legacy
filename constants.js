@@ -52,6 +52,8 @@ global.CREEP_ACTION_RANGE = {
   transfer: 1,
   upgradeController: 3,
   withdraw: 1,
+  recycleCreep: 1,
+  renewCreep: 1
 };
 // Timers
 global.TIMER = {

@@ -1,5 +1,5 @@
 "use strict";
-Room.prototype.setSpawnQueue = function() {
+Room.prototype.setSpawnQueue = function () {
   if (!this.find(FIND_MY_SPAWNS, {
       cache: "deep"
     })
@@ -18,22 +18,14 @@ Room.prototype.setSpawnQueue = function() {
     const sourcesCount = this.find(FIND_SOURCES)
       .length;
     // Scavenger
-    const carryPartsNeeded = _.sum(this.find(FIND_DROPPED_RESOURCES, {
-        cache: "deep"
-      }),
-      r => ~~(r.amount / 50)); // how many CARRY part needed to pick up all drpped resource
+    const carryPartsNeeded = _.sum(this.find(FIND_DROPPED_RESOURCES), r => ~~(r.amount / 50)); // how many CARRY part needed to pick up all drpped resource
     const maxCarryEachCreep = this.find(FIND_MY_SPAWNS, {
         cache: "deep"
       })[0].getBodyFor("scavenger", false)
       .reduce((carryCount, p) => carryCount + (p === CARRY), 0); //the max amount of CARRY one scavenger can have.
     let scavengerNeeded = ~~(carryPartsNeeded / maxCarryEachCreep);
-    if (scavengerNeeded > 2.5 * sourcesCount) scavengerNeeded = Math.ceil(2.5 * sourcesCount);
-    // let tcn = 0; // total CARRY needed
-    // this.find(FIND_DROPPED_RESOURCES).forEach(r => tcn += ~~(r.amount / 50));
-    // tcn /= ~~(this.energyCapacityAvailable / (2 * BODYPART_COST[CARRY] + BODYPART_COST[MOVE]) / 3 * 2);
-    // tcn = tcn > 0 ? ~~tcn + 1 : 0;
-    // this.memory.tcn = tcn;
-    if (!creepsByRole["scavenger"] || scavengerNeeded /*|| creepsByRole["scavenger"].length < (creepsByRole["staticHarvester"] ? creepsByRole["staticHarvester"].length : 1)*/ ) {
+    if (scavengerNeeded > 2 * sourcesCount) scavengerNeeded = 2 * sourcesCount + 1;
+    if (!creepsByRole["scavenger"] || scavengerNeeded) {
       while (scavengerNeeded--) {
         this.memory.spawnQueue.push({
           role: "scavenger",
