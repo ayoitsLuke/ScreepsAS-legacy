@@ -1,4 +1,12 @@
 "use strict"
+
+import {
+  throws
+} from "assert";
+import {
+  error
+} from "util";
+
 Object.defineProperties(Room.prototype, {
   global: {
     get: function() {
@@ -62,15 +70,15 @@ Object.defineProperties(Room.prototype, {
           home = this;
         } else {
           let closest = Infinity;
-          let myRooms = Object.values(Game.rooms)
+          const myRooms = Object.values(Game.rooms)
             .filter(r => r.type === "my"); // TODO check
           for (const room in myRooms) {
-            let l = Game.map.findRoute(this.name, r.name, {
+            const r = Game.map.findRoute(this.name, r.name, {
                 routeCallback: roomName => Memory.rooms[roomName] ? Memory.rooms[roomName] === "hostile" ? Infinity : 1 : 1
               })
               .length;
-            if (d < closest) {
-              closest = l;
+            if (r < closest) {
+              closest = r;
               home = room;
             }
           }
@@ -148,9 +156,88 @@ Object.defineProperties(Room.prototype, {
     }
   }
 });
-Room.prototype.connectTo = function(roomName) {
-
-}
+/**
+ * Define which types of creep is responsible for which action
+ *
+ * @param   {[type]}  action  [action description]
+ *
+ * @return  {[type]}          [return description]
+ */
+Room.prototype.taskToCreepType = function(task) {
+  if (!this.controller || task.creepType) return;
+  let creepType;
+  switch (this.controller.level) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+      /* TODO
+      Worker_s_lc * freeSpace(harvest sources),
+      Transporter (move resources),
+      Worker_m_hc (upgrade, misc)
+      */
+      switch (task.action) {
+        case "harvest":
+          creepType = "Constructor_s_lc";
+        case "upgradeController":
+          creepType = "Constructor_m_hc";
+        case "transfer":
+          creepType = "Logistician";
+        default:
+          creepType = "Constructor_m_hc";
+      }
+      break;
+    case 5:
+      /* TODO
+      Constructor_m_lc (harvest sources),
+      Logistician (move resources),
+      Constructor_s_lc (upgrade)
+      Constructor_m_hc (misc)
+      */
+      switch (task.action) {
+        case "harvest":
+          type = "Constructor_m_lc";
+        case "upgradeController":
+          type = "Constructor_s_lc";
+        case "transfer":
+          type = "Logistician";
+        default:
+          type = "Constructor_m_hc";
+      }
+      break;
+    case 6:
+    case 7:
+      /* TODO
+      Constructor_s_lc: (harvest mineral, upgrade),
+      Constructor_m_lc * 1(harvest sources, misc),
+      Transporter (move resources, misc),
+      */
+      if (task.action === "upgradeController" || (task.action === "harvest" && task.resource.resourceType !== energy)) {
+        creepType = "Constructor_s_lc";
+      } else if (task.action === "transfer") {
+        creepType = "Logistician";
+      } else {
+        creepType = "Constructor_m_hc";
+      }
+      break;
+    case 8:
+      /* TODO
+      Worker_s_lc * freeSpace (harvest mineral),
+      Worker_m_hc * 1 (harvest source, refilling, upgrade, misc),
+      */
+      if (task.action === "harvest" && task.resource.resourceType !== energy) {
+        creepType = "Constructor_m_lc";
+      } else {
+        creepType = "Constructor_m_hc";
+      }
+      break;
+    default:
+      console.error("rcl not exist; Room.taskToCreepType")
+      break;
+  }
+  return creepType;
+};
 /**
  * [roomType description]
  *
@@ -164,20 +251,20 @@ Room.prototype.type = function(roomName) {
    * @author enrico(SlackID: U1Y068C6L)
    * @see https://screeps.slack.com/files/U1Y068C6L/F4AD5JJN7/get_room_type_without_visibility__but_regex___.js
    * @param {string}  roomName  The name of the room you want to know
-   * @var  {boolean}  isAlleyRoom
+   * @var  {boolean}  isHighwayRoom
    * @var  {boolean}  isCoreRoom
    * @var  {boolean}  isCenterRoom
    * @var  {boolean}  isSourceKeeperRoom
    * @var  {boolean}  isControllerRoom
    * enrico's snippet starts
    */
-  let isAlleyRoom = /^[WE]\d*0[NS]\d*0$/.test(roomName);
+  let isHighwayRoom = /^[WE]\d*0[NS]\d*0$/.test(roomName);
   let isCoreRoom = /(^[WE]\d*5[NS]\d*5$)|(^[WE]\d*5[NS]\d*5$)/.test(roomName);
   let isCenterRoom = /^[WE]\d*[4-6]+[NS]\d*[4-6]+$/.test(roomName); // = core room + sk rooms
   let isSourceKeeperRoom = /(^[WE]\d*[4-6][NS]\d*[4|6]$)|(^[WE]\d*[4|6][NS]\d*[4-6]$)/.test(roomName);
   let isControllerRoom = /(^[WE]\d*[1-9]+[NS]\d*[1-3|7-9]+$)|(^[WE]\d*[1-3|7-9]+[NS]\d*[1-9]+$)/.test(roomName);
   // enrico's snippet ends
-  if (isAlleyRoom) return this.memory.type = "alley";
+  if (isHighwayRoom) return this.memory.type = "highway";
   if (isCoreRoom) return this.memory.type = "core";
   if (isSourceKeeperRoom) return this.memory.type = "sourceKeeper";
   if (isControllerRoom) {

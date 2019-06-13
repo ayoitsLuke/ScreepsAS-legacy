@@ -74,115 +74,139 @@ global.CREEP_ACTION_RANGE = {
 };
 /**
  * enthalpy: final energy level - initial energy level
- * @example harvest is positive because creep gain energy therefore final energy (after action) is > than initial energy levle
+ * @exception harvest is negative because it does not return ERR_FULL
  */
-global.CREEP_ACTION = {
+global.CREEP_ACTION = { // TODO need an action to part
   attack: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: ATTACK,
   },
   attackController: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: CLAIM,
   },
   build: {
     range: 3,
-    enthalpy: -BUILD_POWER
+    enthalpy: -BUILD_POWER,
+    part: WORK,
   },
   claimController: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: CLAIM,
   },
   dismantle: {
     range: 1,
-    enthalpy: DISMANTLE_POWER * DISMANTLE_COST // TODO check the math
+    enthalpy: DISMANTLE_POWER * DISMANTLE_COST, // TODO check the math
+    part: WORK,
   },
   drop: {
     range: 0,
-    enthalpy: -1
+    enthalpy: -1,
+    part: CARRY,
   },
   generateSafeMode: {
     range: 1,
-    enthalpy: -1
+    enthalpy: 0,
+    part: CARRY,
   },
   harvest: {
     range: 1,
-    enthalpy: HARVEST_POWER
+    enthalpy: -HARVEST_POWER,
+    part: WORK,
   },
   heal: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: HEAL,
   },
   moveTo: {
     range: 0,
-    enthalpy: 0
+    enthalpy: 0,
+    part: MOVE,
   },
   pickup: {
     range: 1,
-    enthalpy: 1
+    enthalpy: 1,
+    part: CARRY,
   },
   pull: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: MOVE,
   },
   rangedAttack: {
     range: 3,
-    enthalpy: 0
+    enthalpy: 0,
+    part: RANGED_ATTACK,
   },
   rangedHeal: {
     range: 3,
-    enthalpy: 0
+    enthalpy: 0,
+    part: HEAL,
   },
   rangedMassAttack: {
     range: 3,
-    enthalpy: 0
+    enthalpy: 0,
+    part: RANGED_ATTACK,
   },
   repair: {
     range: 3,
-    enthalpy: -REPAIR_POWER *REPAIR_COST
+    enthalpy: -REPAIR_POWER * REPAIR_COST,
+    part: WORK,
   },
   reserveController: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: CLAIM,
   },
   signController: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: /\w+/,
   },
   transfer: {
     range: 1,
-    enthalpy: -1
+    enthalpy: -1,
+    part: CARRY,
   },
   upgradeController: {
     range: 3,
-    enthalpy: -UPGRADE_CONTROLLER_POWER
+    enthalpy: -UPGRADE_CONTROLLER_POWER,
+    part: WORK,
   },
   withdraw: {
     range: 1,
-    enthalpy: 1
+    enthalpy: 1,
+    part: CARRY,
   },
   boostCreep: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: /\w+/,
   },
   recycleCreep: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: /\w+/,
   },
   renewCreep: {
     range: 1,
-    enthalpy: 0
+    enthalpy: 0,
+    part: /\w+/,
   },
 };
 /**
  * The energy needed for spawning the given body
- *
+ * @deprecated
  * @global
  * @method CREEP_PARTS_COST
  * @param  {string[]} body An array describing creep's body
  * @see https://docs.screeps.com/api/#StructureSpawn.spawnCreep
  */
-global.CREEP_PARTS_COST = (body) => _.sum(body, p => BODYPART_COST[p.type || p]);
+global.CREEP_PARTS_COST = (body) => _.sum(body, p => BODYPART_COST[p.part || p]);
 /**
  * The build time of the given creep body
  *

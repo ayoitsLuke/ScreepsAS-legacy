@@ -10,10 +10,9 @@
 Room.prototype.init = function() {
   if (!this.room.spawnQueue) this.memory.spawnQueue = [];
   if (this.room.preSpawn === undefined) this.memory.preSpawn = false;
-  // only init new room, set time out &
   // if room == mine, set area & defense
-  // if room == hostile, set avoid & scan for structures
-  // source, mineral, portal, powerBank
+  // if room == hostile, set avoid
+  // scan for structures, source, mineral, portal, powerBank
   switch (this.type) {
     case "my":
       const sources = this.find(FIND_SOURCES);
@@ -98,7 +97,7 @@ Room.prototype.init = function() {
         sources,
         minerals,
       }
-    case "alley":
+    case "highway":
       // TODO Look for power bank & portal
       break;
     case "sourceKeeper":

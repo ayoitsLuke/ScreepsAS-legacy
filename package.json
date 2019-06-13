@@ -1,0 +1,46 @@
+{
+  "name": "screepsas",
+  "version": "1.0.0",
+  "description": "Grunt set up for upload local repo to screeps server",
+  "main": "Gruntfile.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayoitsLuke/ScreepsAS.git"
+  },
+  "keywords": [
+    "screeps",
+    "javascript"
+  ],
+  "author": "ayoitsLuke",
+  "license": "MIT",
+  "engines": {
+    "node": "8.9.3",
+    "mongodb": "3",
+    "redis": "3"
+  },
+  "bugs": {
+    "url": "https://github.com/ayoitsLuke/ScreepsAS/issues"
+  },
+  "homepage": "https://github.com/ayoitsLuke/ScreepsAS#readme",
+  "dependencies": {
+    "@types/lodash": "^3.10.1",
+    "@types/node": "^8.9.3",
+    "@types/screeps": "^2.5.4",
+    "grunt-screeps": "^1.4.0"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.4",
+    "grunt-contrib-clean": "^2.0.0",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-file-append": "0.0.7",
+    "grunt-jsbeautifier": "^0.2.13",
+    "grunt-rsync": "^3.0.0",
+    "time-grunt": "^2.0.0"
+  }
+}

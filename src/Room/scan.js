@@ -7,7 +7,7 @@ DEFCON level-Trigger condition: Defense protocol
 2-Hard contact: Add owner to Memory.enemyList, prepare for nuke
 1-Nuke incoming: Nuke out; creeps evacuate
 */
-Room.prototype.statusQuo = function() {
+Room.prototype.scan = function() {
   // this.productivity;
   this.checkDefcon();
   if (this.find(FIND_HOSTILE_CREEPS, {

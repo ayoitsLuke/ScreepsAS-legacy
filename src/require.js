@@ -1,20 +1,15 @@
 "use strict";
-// require("othersCodes.render-intel-map.renderIntelMap");
-require("othersCodes.Traveler.Traveler");
+// require("lib.render-intel-map.renderIntelMap");
+require("lib.Traveler.Traveler");
 // require("othersCodes.Cached_dynamic_properties");
 // require("othersCodes.get_room_type_without_visibility__but_regex___");
 // require("othersCodes.Memory_Cache");
 // require("othersCodes.Min-Cut___Wall_-Ramparts_placement_help");
 // require("othersCodes.Resource_Colors");
-require("othersCodes.Room_prototype_properties_for_all_structure_types");
-require("othersCodes.RoomPosition_micro-optimization_methods");
-// require("othersCodes.Unicode_directional_arrows");
-require("othersCodes.z_console_shortcuts_module");
-// require("othersCodes.");
-// require("othersCodes.");
-// require("othersCodes.");
-// require("othersCodes.");
-// require("othersCodes.");
+require("lib.Room_prototype_properties_for_all_structure_types");
+require("lib.RoomPosition_micro-optimization_methods");
+require("lib.z_console_shortcuts_module");
+
 //
 require("constants");
 require("work");

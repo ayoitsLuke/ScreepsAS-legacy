@@ -15,31 +15,52 @@ Object.defineProperties(Creep.prototype, {
   }
 });
 /**
- * [work description]
+ * Creep will get a task form its home room and do that task
+ *
  * @var  {Object[]}  this.memory.task  An object array
  * @return  {[type]}  [return description]
  */
 Creep.prototype.work = function() {
   if (!this.memory.task) this.memory.task = [];
-  // TODO get to task first & then look for same resourceType in task
-  // Might need to define
-  if (!this.memory.task.length) this.getTask();
+  if (!this.memory.task.length) this.memory.task.push(...this.getTask());
   this.doTask();
 };
 /**
- * Get task from Room
- * TODO get "to" quest first & then "from"
+ * Creep get task from Room.memory.task
+ * TODO Compare creep.getTaskFromRoom vs Room.setTaskForCreep
  * If there's no to quest but from, send from to storage or terminals
  *
- * @return  {Object[]}  An object contain action and target
+ * @return  {Object[]}  A list of tasks
  * @example {action: withdraw, target: {id: "someID", pos: {new RoomPosition()}}}
  */
 Creep.prototype.getTask = function() {
-  const toTask = this.home.memory.task.to.find(t=>t.action);
-   // TODO link task w/ creep type
-  const fromTask = this.home.memory.task.from.find;
-  (t => t.resource.resourceType === toTask.resource.resourceType)
-  this.memory.task = [toTask, fromTask];
+  let toTask, fromTask;
+  if (!_.sum(this.carry)) {
+    toTask = this.home.memory.task.find(t => t.creepType === this.memory.type);
+    fromTask = this.home.memory.task.find(t => t.resource.resourceType === toTask.resource.resourceType);
+    if (toTask) _.remove(this.home.memory.task, toTask); // TODO debug
+    if (fromTask) _.remove(this.home.memory.task, fromTask); // TODO debug
+  } else {
+    toTask = this.home.memory.task.find(t => t.resource === _.findLastKey(this.carry));
+    if (toTask) {
+      _.remove(this.home.memory.task, toTask); // TODO debug
+    } else {
+      if (this.memory.type === "Logistician") {
+        toTask = {
+          action: "transfer",
+          target: this.home.terminal || this.home.storage,
+        };
+      } else {
+        toTask = {
+          action: "repair",
+          target: this.pos.findClosestByRange(FIND_STRUCTURES, {
+            filter: s => s.hitsMax - s.hits > REPAIR_POWER * this.getActiveBodyparts(WORK)
+          }),
+        };
+      }
+    }
+  }
+  return [fromTask, toTask];
 };
 /**
  * Execute the task in the memory
@@ -51,11 +72,11 @@ Creep.prototype.doTask = function() {
     action,
     target,
     resource
-  } = this.memory.task[this.memory.task.length - 1];
+  } = this.memory.task[0];
   const errMsg = this.go_(action, target, resource);
   if (errMsg) { // This deisgn is not game efficient√
     target.memory.taskSent = false;
-    this.memory.task.pop();
+    this.memory.task.shift();
     return OK;
   }
 };
@@ -74,7 +95,7 @@ Creep.prototype.go_ = function(action, target, resource) {
   const range = CREEP_ACTION[action].range;
   const target = RoomObject.active(target);
   resource = resource || {};
-  resource.resourceType = resource.resourceType || Object.keys(this.carry)[0];
+  resource.resourceType = resource.resourceType || _.findLastKey(this.carry);
   // Existence check if visible
   if (this.pos.roomName === target.pos.roomName && !target.room) {
     return ERR_INVALID_TARGET;

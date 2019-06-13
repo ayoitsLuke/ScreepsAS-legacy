@@ -19,18 +19,17 @@ StructureSpawn.prototype.work = function() {
     this.room.memory.preSpawn = false;
   } else {
     this.room.memory.preSpawn = true;
-    // NOTE: Room.memory.spawnQueue is an Object[]. eg. [{role: "role", target: {some target}}, {}, {}]
-    const seed = this.room.memory.spawnQueue[0];
-    // Special case: all creeps die out. Therefore max energy = 300, which < room.energyCapacityAvailable
-    const body = this.getBodyFor(seed.role, seed.urgent);
-    if (!body.length && !seed.urgent) {
+    // NOTE: Room.memory.spawnQueue is an Object[]. eg. [{type: "type", target: {some target}}, {}, {}]
+    const egg = this.room.memory.spawnQueue[0];
+    const body = this.getBodyFor(egg.type, egg.urgent);
+    if (!body.length && !egg.urgent) {
       this.room.memory.spawnQueue.shift();
-      console.log("[" + this.name + "] skipped " + seed.role);
+      console.log("[" + this.name + "] skipped " + egg.type);
       return;
     }
-    const name = seed.role + Game.shard.name.replace("shard", "\n") + this.room.name + this.name.replace("Spawn", " ") + Game.time % 10000;
+    const name = egg.type + Game.shard.name.replace("shard", "\n") + this.room.name + this.name.replace("Spawn", " ") + Game.time % 10000;
     const memory = {
-      ...seed,
+      ...egg,
       home: this.room.name
     };
     const energyStructures = [...this.room.find(FIND_MY_STRUCTURES, {
@@ -38,29 +37,20 @@ StructureSpawn.prototype.work = function() {
     }), ...this.room.find(FIND_MY_STRUCTURES, {
       filter: s => s.structureType === STRUCTURE_SPAWN && s.isActive()
     })];
-    console.log("[" + this.name + "] is spawning: " + seed.role + (seed.urgent ? " (urgent)" : ""));
-    const spawnCreepErrMsg = this.spawnCreep(body, name, {
+    console.log("[" + this.name + "] is spawning: " + egg.type + (egg.urgent ? " (urgent)" : ""));
+    const errMsg = this.spawnCreep(body, name, {
       energyStructures,
       memory,
     });
-    if (spawnCreepErrMsg === OK) {
-      if (!seed.urgent) {
-        this.room.find(FIND_MY_CREEPS, {
-            filter: c => c.memory.role === seed.role && c.memory.urgent
-          })
-          .forEach(c => {
-            c.memory.task = "recycle";
-            c.memory.target = undefined;
-          });
-      }
-      // TODO rename!
-      this.room.refillSpeed;
-      this.room.refillSpeed(this.room.energyAvailable - body.reduce((totalCost, p) => totalCost + BODYPART_COST[p.type], 0), Game.time + 1)
+    if (errMsg === OK) {
+      // this.room.refillSpeed;
+      // this.room.refillSpeed(this.room.energyAvailable - body.reduce((totalCost, p) => totalCost + BODYPART_COST[p.type], 0), Game.time + 1)
       this.room.memory.spawnQueue.shift();
       this.room.memory.preSpawn = false;
     }
   }
 }
+
 /**
  * [description]
  *
@@ -72,30 +62,42 @@ StructureSpawn.prototype.work = function() {
 StructureSpawn.prototype.getBodyFor = function(type, urgent) {
   //use BODYPART_COST
   let budget = urgent ? this.room.energyAvailable > SPAWN_ENERGY_CAPACITY ? this.room.energyAvailable : SPAWN_ENERGY_CAPACITY : this.room.energyCapacityAvailable;
-  let base = [CARRY, CARRY, WORK, MOVE, MOVE]; // 300 energy
-  let dlc = [];
+  const [base, dlc] = this.getPartsFrom(type);
+  return this.getBodyParts(budget, base, dlc)
+};
+/**
+ * Generate a list of basic components of a creep from its type
+ * @param   {string}  type  the type name of a creep
+ * @return  {string[]}  [base, dlc]
+ */
+StructureSpawn.prototype.getPartsFrom = (type) => {
+  let base = [CARRY, WORK, MOVE, MOVE]; // 250 energy
   switch (type) {
+    // TODO see if each dlc is reasonable
     // Civilian
-    case "Worker_s_lc": // Worker(stationary, low capacity)
+    case "Constructor_s_lc": // Constructor (stationary, low capacity)
       dlc = [WORK];
       break;
-    case "Worker_s_hc": // Worker(stationary, high capacity)
-      dlc = [CARRY, WORK];
+    case "Constructor_s_hc": // Constructor (stationary, high capacity)
+      dlc = [CARRY, CARRY, WORK, WORK, WORK];
       break;
-    case "Worker_m_lc": // Worker(mobile, low capacity)
+    case "Constructor_m_lc": // Constructor (mobile, low capacity)
       // harvester, high RCL upgrader (RCL >= 5)
       dlc = [WORK, WORK, MOVE]; // 250 energy
       break;
-    case "Worker_m_hc": // Worker(mobile, high capacity)
+    case "Constructor_m_hc": // Constructor (mobile, high capacity)
       // repairer, builder, low RCL upgrader
       dlc = [CARRY, CARRY, WORK, WORK, MOVE]; // 350 energy
       break;
-    case "Transporter":
+    case "Logistician":
       dlc = [CARRY, CARRY, MOVE]; // 150 energy
       break;
       // High RCL creep
     case "Creep_of_Science":
       dlc = [CARRY];
+      break;
+    case "Defender":
+      dlc = [ATTACK, RANGED_ATTACK, MOVE];
       break;
     case "Hauler": // find creep need help (creep.memory.haulRequested) & pull
       base = dlc = [MOVE];
@@ -106,18 +108,15 @@ StructureSpawn.prototype.getBodyFor = function(type, urgent) {
       // Military
     case "Rifleman":
       base = [RANGED_ATTACK, MOVE]; // 200 energy
-      dlc = [TOUGH, ATTACK, MOVE, MOVE]; // 190 energy
+      dlc = [ATTACK, MOVE]; // 190 energy
       break;
     case "Medic":
       base = [RANGED_ATTACK, MOVE]; // 200 energy
       dlc = [HEAL, MOVE]; // 300 energy
       break;
       // Specialist
-    case "Sniper":
-      base = dlc = [RANGED_ATTACK, MOVE]; // 200 energy
-      break;
-    case "Shield": // Need hauler
-      base = [MOVE, MOVE];
+    case "Distractor": // ! Need hauler
+      base = [RANGED_ATTACK, MOVE];
       dlc = [TOUGH, HEAL];
       break;
     case "Combat_Engineer":
@@ -127,7 +126,7 @@ StructureSpawn.prototype.getBodyFor = function(type, urgent) {
     default:
       break;
   }
-  return this.getBodyParts(budget, base, dlc)
+  return [base, dlc];
 };
 /**
  *
@@ -140,8 +139,8 @@ StructureSpawn.prototype.getBodyFor = function(type, urgent) {
  */
 StructureSpawn.prototype.getBodyParts = function(budget, base, dlc) {
   let parts = [];
-  const baseCost = CREEP_PARTS_COST(base);
-  const dlcCost = CREEP_PARTS_COST(dlc);
+  const baseCost = _.sum(base, p => BODYPART_COST[p.part || p]);
+  const dlcCost = _.sum(dlc, p => BODYPART_COST[p.part || p]);
   if (baseCost > budget) return [];
   //console.log("base=" + base + " dlc=" + dlc)
   //console.log("budget=" + budget + " baseCost=" + baseCost + " dlcCost=" + dlcCost);

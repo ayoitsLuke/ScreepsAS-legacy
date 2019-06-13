@@ -1,61 +1,67 @@
 "use strict";
-// This doc connect each creep's role to it's action/task
-// Note: keep go_* simple and define condition in role to action
-// All go_* can recieve a object as param to force
-//pass a opts into go_* to get a reuse target ID???
-Room.prototype.work = function() {
-  /*
-  Work flow -> init if need -> scan if needed -> gather task -> assign task to nearest creep
-  */
- // TODO move this to main
+/**
+ * Room.work will be called each tick
+ * Work flow: init - > scan - > save a list of task in memory - > setSpawnQueue
+ *
+ * @param   {Creeps[]}  [creeps]  Creeps belongs to this room
+ * @return  {[type]}  [return description]
+ */
+Room.prototype.work = function(creeps) {
   if (!this.memory.lastUpdate) this.memory.lastUpdate = {};
-  if (!this.memory.lastUpdate.init) {
-    // TODO only init once but scan & update more times
+  if (!(this.memory.lastUpdate.init > Game.time - TIMER[init])) {
+    // TODO Init is about the fix structures in the room
     this.memory.lastUpdate.init = Game.time;
     this.init();
   }
   if (!(this.memory.lastUpdate.scan > Game.time - TIMER[scan])) {
+    // TODO Scan is about creep info
     this.memory.lastUpdate.scan = Game.time;
-    this.statusQuo();
+    this.scan();
   }
-  if (this.memory.type === "my") {
+  if (this.type !== "hostile" && Game.map.prototype.getRoomTaxicabDistance(this.name, this.home, name) <= Math.ceil(this.home.rcl / 3)) {
+    let currentRoomTasks = this.gatherTasks();
+    for (const task in roomTasks) {
+      if (!task.creepType) {
+        Object.assign(task, {
+          creepType: this.taskToCreepType(task)
+        });
+      }
+    }
+    this.memory.task.push(...currentRoomTasks);
+  }
+  if (this.find(FIND_MY_SPAWNS)[0]) {
     this.setSpawnQueue();
+    // TODO add creepType in each task;
   }
-  if (this.memory.type !== "hostile") this.generateTask();
-
   this.hud();
 }
 /**
- * [gatherTasks description]
+ * Create a list of tasks by checking each structures & constructure sites {@link src/RoomObject/Structure/structure.js}
  *
- * @return  {[type]}  [return description]
- */
-/**
- *
- * Find creep without task, group them by type
- * then look up task for each type in room.memory.task = { }
- * TODO handle when creep do task but still resource left. eg. get energy from container then transfer into one extension, & still have energy left in the creep.
- * Solutions:
- * Or an I/O system,
  * @example {from: {action, target, resource}, {withdraw, container, 10}...}, to: [{transfer, extensions, 20},{},{}]}
- * TODO decide the format for store such info
- * @return  {[type]}  [return description]
+ * @return  {Object[]}  A list of tasks
  */
 Room.prototype.gatherTasks() = function() {
-  if (!this.memroy.task) {
-    let list = {};
-    RESOURCES_ALL.forEach(r => list[r] = []);
-    this.memory.task = {
-      from: {
-        list
-      },
-      to: {
-        list
-      }
-    };
-  }
-  _.invoke(this.find(FIND_STRUCTURES), "generateTask") // TODO add "getTask" to each structures
-  _.invoke(this.find(FIND_MY_CONSTRUCTION_SITES), "getTask") // TODO
+  let task = [];
+  this.find(FIND_SOURCES_ACTIVE, {
+      filter: s => s.pos.findInRange(FIND_MY_CREEPS, 1)
+        .reduce((workParts, c) => workParts + c.getActiveBodyparts(WORK), 0) < 5
+    })
+    .forEach(s => {
+      if (this.memory.taskSent) return;
+      s.memory.taskSent = true;
+      task.push({
+        action: "harvest",
+        enthalpy: 1,
+        target: s.simplify,
+        time: Game.time,
+      })
+    });
+  this.find(FIND_STRUCTURES)
+    .forEach(s => task.push(...s.generateTask()));
+  this.find(FIND_MY_CONSTRUCTION_SITES)
+    .forEach(s => task.push(...s.generateTask())); // TODO
+  return task;
 };
 
 /**
@@ -64,16 +70,12 @@ Room.prototype.gatherTasks() = function() {
  * @return  {[type]}  [return description]
  */
 function selfDestruct() {
-  if (this.controller && this.controller.my && Game.time % 100 === 1) {
-    if (!this.memory.level || this.memory.level < this.controller.level) this.memory.level = this.controller.level;
-    if (!this.find(FIND_MY_SPAWNS)
-      .length) {
-      Memory.BURN = this.name + Game.time;
-      this.terminal.destroy();
-      this.storage.destroy();
-      this.find(FIND_MY_CREEPS)
-        .forEach(c => c.say("congrates! U win!"))
-    }
+  if (!this.find(FIND_MY_SPAWNS)
+    .length) {
+    Memory.BURN = this.name + Game.time;
+    this.terminal.destroy();
+    this.storage.destroy();
+    this.find(FIND_MY_CREEPS)
+      .forEach(c => c.say("congrates! U win!"))
   }
-
 }
