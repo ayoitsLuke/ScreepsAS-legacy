@@ -1,42 +1,53 @@
 "use strict";
-// require("lib.render-intel-map.renderIntelMap");
-require("lib.Traveler.Traveler");
-// require("othersCodes.Cached_dynamic_properties");
-// require("othersCodes.get_room_type_without_visibility__but_regex___");
-// require("othersCodes.Memory_Cache");
-// require("othersCodes.Min-Cut___Wall_-Ramparts_placement_help");
-// require("othersCodes.Resource_Colors");
-require("lib.Room_prototype_properties_for_all_structure_types");
-require("lib.RoomPosition_micro-optimization_methods");
-require("lib.z_console_shortcuts_module");
+//
+require("constant");
 
-//
-require("constants");
-require("work");
-//
-require("Creep.action.build");
-require("Creep.action.explore");
-require("Creep.action.harvest");
-require("Creep.action.pickup");
-require("Creep.action.recharge");
-require("Creep.action.recycle");
-require("Creep.action.repair");
-require("Creep.action.refill");
-require("Creep.action.renew");
-require("Creep.action.repair");
-require("Creep.action.upgrade");
-require("Creep.role");
-require("Creep.override");
-//
-require("Room.statusQuo");
+// lib
+// require("lib.ConsoleStats.main");
+require("lib.RenderIntelMap.GlobalTracking");
+require("lib.RenderIntelMap.RenderIntelMap");
+require("lib.Button");
+require("lib.CachedDynamicProperties");
+require("lib.DebuggingUtilities");
+require("lib.EngineUtils");
+// require("lib.Marketwatch");
+require("lib.MemoryCache");
+require("lib.MinCutWallRmparts");
+require("lib.ResourcColors");
+require("lib.RoomPositionMethodsOptimization");
+require("lib.RoomPropertiesforAllStructures");
+require("lib.RoomVisual");
+require("lib.SetTimeout");
+require("lib.TrackMaxRCL");
+require("lib.Traveler");
+require("lib.zConsoleShortCuts");
+// * require("lib.");
+
+// Room
 require("Room.find");
-require("Room.init");
-require("Room.birthControl");
-require("Room.property");
 require("Room.hud");
-//
+require("Room.init");
+require("Room.intel");
+require("Room.roomProperties");
+require("Room.roomWork");
+require("Room.scan");
+require("Room.spawnQueue");
+
+// RoomObject
+require("RoomObject.roomObjectProperties");
 require("RoomObject.Source");
-require("RoomObject.StructureLink");
-require("RoomObject.memory");
 require("RoomObject.RoomPosition");
-require("require");
+require("RoomObject.Mineral");
+
+// Creep
+require("Creep.creepWork");
+require("Creep.override");
+
+// Structure
+require("Structure.Lab");
+require("Structure.Link");
+require("Structure.Spawn");
+require("Structure.structureProperties");
+require("Structure.Terminal");
+require("Structure.Tower");
+// require("Structure.");

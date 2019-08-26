@@ -1,11 +1,10 @@
 "use strict";
-// READY
 if (!Room.prototype._find) {
   Room.prototype._find = Room.prototype.find;
   /**
    * Find all visible objects and return as an array
    *
-   * @param   {number}  type  One of the FIND_* constants.
+   * @param   {FIND_*}  type  One of the FIND_* constants.
    * @param   {Object}  [opts={}]  Same as [Room.prototype.find()]{@link https://docs.screeps.com/api/#Room.find}
    * @return  {RoomObject[]}  an array of all RoomObjects which is [visible]{@link https://docs.screeps.com/api/#Game.rooms} to player
    */
@@ -51,7 +50,7 @@ if (!Room.prototype._find) {
     const methodFind = opts.all ? "findInAllRooms" : "_find";
     if (opts.debug) console.log("type=" + type + " opts" + JSON.stringify(opts))
     if (type === FIND_SOURCES || type === FIND_MINERALS) {
-      // Handle stationary harvest vs remote harvest
+      // TODO Handle stationary harvest vs remote harvest
     }
     if (opts.debug) console.log("cache:" + opts.cache + " random:" + Boolean(opts.random) + " claim:" + Boolean(opts.claim) + " filter:" + JSON.stringify(opts.filter));
     if (!opts.cache) {
@@ -138,6 +137,10 @@ if (!Room.prototype._find) {
       result = global.find[cacheName].splice(i, 1);
       global.found[cacheName].splice(i, 1);
     }
+    if (opts.find) {
+      _.find(result, opts.find);
+    }
+
     return Array.isArray(result) ? result : [result];
   }
 }
@@ -195,9 +198,9 @@ RoomPosition.prototype.findClosestByPriority = function(type, opts, priority) {
 function hashCode(string) {
   let hash = 0,
     i, chr;
-  if (this.length === 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    chr = this.charCodeAt(i);
+  if (string.length === 0) return hash;
+  for (i = 0; i < string.length; i++) {
+    chr = string.charCodeAt(i);
     hash = ((hash << 5) - hash) + chr;
     hash |= 0; // Convert to 32bit integer
   }

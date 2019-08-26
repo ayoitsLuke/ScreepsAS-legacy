@@ -1,26 +1,27 @@
+"use strict";
 Object.defineProperties(Source.prototype, {
-  freeSpaceCount: {
+  freeSpace: {
     // enumerable: false,
-    // configurable: true,
+    configurable: true,
     get: function() {
-      if (!this.global.freeSpaceCount) {
-        if (!this.memory.freeSpaceCount) {
-          let freeSpaceCount = 0;
-          const roomTerrain = Game.map.getRoomTerrain(this.room.name)[this.pos.x - 1, this.pos.x, this.pos.x + 1].forEach(x => {
-            [this.pos.y - 1, this.pos.y, this.pos.y + 1].forEach(y => {
-              if (roomTerrain.get(x, y) !== TERRAIN_MASK_WALL) freeSpaceCount++;
-            }, this);
+      if (!this.memory.freeSpace) {
+        let freeSpace = 0;
+        const roomTerrain = Game.map.getRoomTerrain(this.room.name);
+        [this.pos.x - 1, this.pos.x, this.pos.x + 1].forEach(x => {
+          [this.pos.y - 1, this.pos.y, this.pos.y + 1].forEach(y => {
+            if (roomTerrain.get(x, y) !== TERRAIN_MASK_WALL || new RoomPosition(x, y, this.room.name)
+              .lookFor(LOOK_STRUCTURES)[0]) freeSpace++;
           }, this);
-          this.memory.freeSpaceCount = freeSpaceCount;
-        }
-        this.global.freeSpaceCount = this.memory.freeSpaceCount;
+        }, this);
+        this.memory.freeSpace = freeSpace;
       }
-      return this._freeSpaceCount;
+      return this.memory.freeSpace;
+
     }
   },
   productionPerTick: { // How many energy produced per tick within current regen time.
     // enumerable: false,
-    // configurable: true,
+    configurable: true,
     get: function() {
       if (!this.global.productionPerTick) {
         this._productionPerTick = (this.energyCapacity - this.energy) / (ENERGY_REGEN_TIME - (this.ticksToRegeneration ? this.ticksToRegeneration : 0));
@@ -30,93 +31,75 @@ Object.defineProperties(Source.prototype, {
   },
   productivity: { // The productivity of this source. 1 as a perfect production ratio when all energy harvested as soon as the source regen
     // enumerable: false,
-    // configurable: true,
+    configurable: true,
     get: function() {
       if (!this.global.productivity) {
         this.global.productivity = this.productionPerTick / (this.energyCapacity / ENERGY_REGEN_TIME);
       }
-      return this._productivity;
+      return this.global.productivity;
     }
   },
   container: {
+    configurable: true,
     get: function() {
       if (!this.global.container) {
         const container = this.pos.findInRange(FIND_STRUCTURES, 1, {
-          filter: s => s.structureType === STRUCTURE_CONTAINER,
-          cache: "deep"
+          filter: s => s.structureType === STRUCTURE_CONTAINER
         })[0] || this.pos.findInRange(FIND_CONSTRUCTION_SITES, 1, {
           filter: c => c.structureType === STRUCTURE_CONTAINER
         })[0];
         if (container) {
-          this.global.container = {
-            id: container.id,
-            pos: container.pos
-          };
+          this.global.container = container.simplify;
         } else {
-          const pos = this.pos.findPathTo(this.room.controller || this.pos.findClosestByPath(FIND_MY_SPAWNS, {
-            all: true
-          }), {
+          // FIXME Room.planRoad(this.pos, this.home.controller,{range:3});
+          const path = this.pos.findPathTo(this.room.controller, {
             range: 3,
             ignoreCreeps: true,
             ignoreDestructibleStructures: true,
-            ignoreRoads: true
-          })[0];
-          return this.room.createConstructionSite(pos.x, pos.y, STRUCTURE_CONTAINER);
+            ignoreRoads: true,
+            swampCost: 1
+          });
+          if (path[0]) this.room.createConstructionSite(path[0].x, path[0].y, STRUCTURE_CONTAINER);
+          return;
         }
       }
-      // TODO simplify x,y,roomName into new RoomPosition
-      const {
-        x,
-        y,
-        roomName
-      } = this.global.container.pos;
-      return Game.getObjectById(this.global.container.id) || {
-        id: this.global.container.id,
-        pos: new RoomPosition(x, y, roomName)
-      };
+      return RoomObject.active(this.global.container);
     }
   },
   link: {
+    configurable: true,
+
     get: function() {
       if (this.room.controller && this.room.controller.my && this.room.controller.level < 5) return;
-      if (this.memory.link) return Game.getObjectById(this.memory.link.id);
-      else {
+      if (!this.memory.link) {
         const link = this.pos.findInRange(FIND_MY_STRUCTURES, 2, {
-          filter: s => s.structureType === STRUCTURE_LINK,
-          cache: "deep"
+          filter: s => s.structureType === STRUCTURE_LINK
         })[0] || this.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 2, {
           filter: c => c.structureType === STRUCTURE_LINK
         })[0];
         if (link) {
-          this.global.link = {
-            id: link.id,
-            pos: link.pos
-          };
+          this.memory.link = link.simplify;
         } else {
-          const pos = this.pos.findPathTo(this.room.controller, {
+          const path = this.pos.findPathTo(this.room.controller, {
             range: 3,
             ignoreCreeps: true,
             ignoreDestructibleStructures: true,
             ignoreRoads: true,
             maxRooms: 1,
             swampCost: 1
-          })[1];
-          return this.room.createConstructionSite(pos.x, pos.y, STRUCTURE_LINK);
+          });
+          if (path[1]) this.room.createConstructionSite(path[1].x, path[1].y, STRUCTURE_LINK);
+          return;
         }
       }
-      const {
-        x,
-        y,
-        roomName
-      } = this.global.link.pos;
-      return Game.getObjectById(this.global.link.id) || {
-        id: this.global.container.id,
-        pos: new RoomPosition(x, y, roomName)
-      }
+      return RoomObject.active(this.memory.link);
     }
   },
+
   warehouse: {
+    configurable: true,
     get: function() {
+      return this.link || this.container;
       const link = this.link;
       const container = this.container;
       return (link instanceof Structure && link.energy < link.energyCapacity) ? link : (container instanceof Structure) ? container : undefined;

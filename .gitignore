@@ -1,7 +1,10 @@
-# Junks #
-/.screeps.json
-/dist
-/node_modules
+# Junks and confidentials #
+###########################
+*multimeter*
+.screeps.json
+dist/*
+node_modules/*
+# src/lib(trackable)/*/
 
 # Compiled source #
 ###################

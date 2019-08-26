@@ -1,30 +1,34 @@
 "use strict";
-Room.prototype.hud = function() {
+const renderIntelMap = require("lib.RenderIntelMap.RenderIntelMap");
+
+Room.prototype.hud = function(room, creeps) {
   try {
     // Top Left
-    this.visual.text("Room: " + this.name + " \n Spawn queue: " + this.memory.spawnQueue.map(o => o.role), 0, 0, {
+    this.visual.text("Room: " + this.name + " \n Spawn queue: " + this.memory.spawnQueue.map(o => o.type), 0, 0, {
       align: "left",
       opacity: 0.5
     });
-    this.visual.text("RCL: " + this.controller.level + " \n Progress: " + ~~(100 * this.controller.progress / this.controller.progressTotal) + "%", 0, 1, {
+    this.visual.text("Room task: " + this.memory.tasks.map(t => t.action), 0, 1, {
+      align: "left",
+      opacity: 0.5
+    });
+    this.visual.text("RCL: " + this.controller.level + " \n Progress: " + ~~(100 * this.controller.progress / this.controller.progressTotal) + "%", 0, 2, {
       align: "left",
       opacity: 0.5
     })
-    this.visual.text("energy/tick: " + ~~this.productionPerTick + " \n productivity: " + ~~(100 * this.productivity) + "% \n DEFCON: " + this.memory.defcon, 0, 2, {
+    this.visual.text("energy/tick: " + ~~this.productionPerTick + " \n productivity: " + ~~(100 * this.productivity) + "% \n DEFCON: " + this.memory.defcon, 0, 3, {
       align: "left",
       opacity: 0.5,
-      color: this.productivity >= 1 ? "#00ff00" : this.productivity >= 0.2 ? "#ffff00" : "#ff0000"
+      color: renderIntelMap.hsv2rgb(120 * this.productivity, 1, 1)
     });
     this.visual.text("refillSpeed" + this.refillSpeed, 0, 4, {
       align: "left",
       opacity: 0.5
     });
     // Should remove this to save CPU
-    const creepsByRole = _.groupBy(Object.values(Game.creeps)
-      .filter(c => c.memory.home === this.name), "memory.role");
     let i = 5;
-    for (let creep in creepsByRole) {
-      this.visual.text(creep + ": " + creepsByRole[creep].length, 0, i++, {
+    for (let creep in creeps) {
+      this.visual.text(creep + ": ", 0, i++, {
         align: "left",
         opacity: 0.5
       });
@@ -48,7 +52,7 @@ Room.prototype.hud = function() {
     for (let source of sources) {
       this.visual.text(~~source.productionPerTick + " energy/tick " + ~~(100 * source.productivity) + "% ", source.pos, {
         align: "left",
-        color: source.productivity > 1 ? "#00FF00" : source.productivity > 0.2 ? "#FFFF00" : "#ff0000",
+        color: renderIntelMap.hsv2rgb(Math.min(120, 120 * source.productivity), 1, 1),
         opacity: 0.5
       });
     }

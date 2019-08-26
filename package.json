@@ -1,12 +1,13 @@
 {
   "name": "screepsas",
   "version": "1.0.0",
-  "description": "Grunt set up for upload local repo to screeps server",
-  "main": "Gruntfile.js",
+  "description": "Screeps script & developing environment setup",
+  "main": "main.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
+    "start": "multimeter",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +19,7 @@
     "javascript"
   ],
   "author": "ayoitsLuke",
+  "private": true,
   "license": "MIT",
   "engines": {
     "node": "8.9.3",
@@ -29,18 +31,22 @@
   },
   "homepage": "https://github.com/ayoitsLuke/ScreepsAS#readme",
   "dependencies": {
-    "@types/lodash": "^3.10.1",
-    "@types/node": "^8.9.3",
-    "@types/screeps": "^2.5.4",
-    "grunt-screeps": "^1.4.0"
-  },
-  "devDependencies": {
     "grunt": "^1.0.4",
     "grunt-contrib-clean": "^2.0.0",
     "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-uglify": "^4.0.1",
     "grunt-file-append": "0.0.7",
     "grunt-jsbeautifier": "^0.2.13",
     "grunt-rsync": "^3.0.0",
+    "grunt-screeps-new": "^1.0.0",
     "time-grunt": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "3.10.1",
+    "@types/node": "8.9.3",
+    "@types/screeps": "latest",
+    "grunt-jsdoc": "^2.4.0",
+    "jsdoc": "^3.6.3",
+    "screeps-multimeter": "^1.8.0"
   }
 }

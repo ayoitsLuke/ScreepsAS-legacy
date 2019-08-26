@@ -53,3 +53,19 @@ npm install time-grunt --save-dev
 1. Copy this [`GruntFile.js`](https://docs.screeps.com/contributed/advanced_grunt.html#Full-Example) and set up you own [`.screeps.json`](https://docs.screeps.com/contributed/advanced_grunt.html#Secure-Credentials)
 
 2. Push your local scripts to Screeps server by typing in `grunt screeps` in your cmd/terminal.
+
+有关任务系统：
+因为这游戏本质是个搬运资源游戏
+比如：
+withdraw 能量 -> tranfer spawn
+withdraw 能量 -> upgrade controller
+harvest 能量 -> tranfer tower
+etc.
+如果用role的话以上每一种情况都得分别写role
+用任务系统的话就可以按照creep的body去找某类action的任务
+如WORK多的可去build/repair/upgrade，CARRY多的去给各类建筑物填充energy
+
+# Note
+
+`Object.values(Game.structures).some(s => s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_ROAD || s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL)` === false
+`Game.constructionSite` include construction sites without vision. Those sites has `.pos` (RoomPosition) but no `.room`

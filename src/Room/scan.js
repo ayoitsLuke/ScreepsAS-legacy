@@ -1,41 +1,33 @@
 "use strict";
-/* Room.prototype.defcon:
-DEFCON level-Trigger condition: Defense protocol
-5-Peace: One guard per exit; push out into next room's exit area
-4-Civilian hostile creeps spotted: Attack only in claimed room;
-3-Armed hostile creeps spotted: Military spawning, group, & send to corresponding exit.
-2-Hard contact: Add owner to Memory.enemyList, prepare for nuke
-1-Nuke incoming: Nuke out; creeps evacuate
-*/
-Room.prototype.scan = function() {
-  // this.productivity;
-  this.checkDefcon();
-  if (this.find(FIND_HOSTILE_CREEPS, {
-      filter: c => c.owner !== "Invader" && c.getActiveBodyparts(HEAL) > 25
-    })
-    .length) this.controller.activateSafeMode;
-}
-Room.prototype.checkDefcon = function() {
-  if (!this.memory.defcon) this.memory.defcon = 5;
-  let currentDefcon = 5;
-  if (this.find(FIND_HOSTILE_CREEPS)
-    .length) currentDefcon = 4;
-  if (this.find(FIND_HOSTILE_CREEPS, {
-      filter: c => c.getActiveBodyparts(ATTACK) + c.getActiveBodyparts(RANGED_ATTACK) + c.getActiveBodyparts(HEAL)
-    })
-    .length) currentDefcon = 3;
-  if (this.getEventLog(true)
-    .search("EVENT_ATTACK") > -1) currentDefcon = 1;
-  if (this.find(FIND_NUKES)
-    .length) currentDefcon = 1;
-  if (this.memory.defcon < 5 || currentDefcon < 5) {
-    if (currentDefcon < this.memory.defcon) this.memory.defcon = currentDefcon
-    if (!global.defconDowngradeTime) global.defconDowngradeTime = {};
-    if (!global.defconDowngradeTime[this.name]) global.defconDowngradeTime[this.name] = TIMER.defconDowngrade;
-    console.log("[" + this.name + "] DEFCON downgrade in " + global.defconDowngradeTime[this.name]);
-    if (!--global.defconDowngradeTime[this.name]) {
-      global.defconDowngradeTime[this.name] = undefined;
-      this.memory.defcon++;
-    }
+/**
+ * Check current room's defcon. Update or send to home room if needed
+ *
+ * DEFCON level - {Trigger condition}: [Defense protocol]
+ * 5 - Peace: No action
+ * 4 - Civilian hostile creeps spotted: No action.
+ * 3 - Armed hostile creeps spotted: Military creeps spawning, grouping, & sending to corresponding location.
+ * 2 - Armed hostile creeps entering reserved rooms: Add owner to Memory.enemyList, prepare for nuke.
+ * 1 - Nuke incoming: Build ramparts to cover high-priority sturctures in landing location. Creeps evacuate before nuke lands.
+ *
+ * @return  {Object}  current defcon
+ */
+Room.prototype.updateDefcon = function() {
+  if (!this.memory.defcon) this.memory.defcon = {
+    level: 5,
+    issued: Game.time
+  };
+  const hostileCreeps = this.find(FIND_HOSTILE_CREEPS);
+  const level = this.find(FIND_NUKES)[0] ? 1 :
+    (this.controller && this.controller.reservation && this.controller.reservation.username === global.MY_USERNAME && this.find(FIND_HOSTILE_CREEPS)[0]) ? 2 :
+    hostileCreeps.some(c => c.getActiveBodyparts(ATTACK) + c.getActiveBodyparts(RANGED_ATTACK)) ? 3 :
+    hostileCreeps[0] ? 4 :
+    5;
+  if (level < this.memory.defcon.level || !(this.memory.defcon.issued > Game.time - TIMER.defconDowngrade)) {
+    // current defcon level is more servere, or timer expired
+    this.memory.defcon = {
+      level,
+      issued: Game.time
+    };
   }
+  return this.memory.defcon;
 }
