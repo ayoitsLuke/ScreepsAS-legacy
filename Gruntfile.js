@@ -134,7 +134,6 @@ module.exports = function(grunt) {
     },
 
 
-
     // Compress code
     uglify: {
       buildb: { //任务二：压缩b.js，输出压缩信息

@@ -1,6 +1,6 @@
 # ScreepsAS
 
-### *Screeps artificial stupidity*
+## *Screeps artificial stupidity*
 
 ## Intro
 
@@ -30,9 +30,9 @@ The fact is, no matter how smart an AI is, it'll always be dumber than the dumbe
 6. Type in `npm install grunt --save-dev` and then also type in all commands starts with `npm install...` in this [guide](https://docs.screeps.com/contributed/advanced_grunt.html).  And don't forget to save the [example file](https://docs.screeps.com/contributed/advanced_grunt.html#Full-Example) as `GruntFile.js` . My GruntFile is the same as this example but with some extra comments for non-coders.
 7. type in [`grunt test`](https://docs.screeps.com/contributed/advanced_grunt.html#Beautify),then read the message it returns. If the message didn't say you **missing** something, then you're fine.
 8. Finally, set up your [`.screeps.json`](https://docs.screeps.com/contributed/advanced_grunt.html#Secure-Credentials).
-9.  Be careful, safety is off. By "**pushing code**", you'll wipe out all your server scripts and replace it with the scripts in your local folder. If you're ready, type in `grunt screeps` to push your local code to the offical server.
+9. Be careful, safety is off. By "**pushing code**", you'll wipe out all your server scripts and replace it with the scripts in your local folder. If you're ready, type in `grunt screeps` to push your local code to the offical server.
 
-### TL;DR version:
+### TL;DR version
 Disclaimer: You'd better know what you're doing.
 
 1. type in below line-by-line:
@@ -50,9 +50,9 @@ npm install grunt-screeps --save-dev
 npm install time-grunt --save-dev
 ```
 
-1. Copy this [`GruntFile.js`](https://docs.screeps.com/contributed/advanced_grunt.html#Full-Example) and set up you own [`.screeps.json`](https://docs.screeps.com/contributed/advanced_grunt.html#Secure-Credentials)
+2. Copy this [`GruntFile.js`](https://docs.screeps.com/contributed/advanced_grunt.html#Full-Example) and set up you own [`.screeps.json`](https://docs.screeps.com/contributed/advanced_grunt.html#Secure-Credentials)
 
-2. Push your local scripts to Screeps server by typing in `grunt screeps` in your cmd/terminal.
+3. Push your local scripts to Screeps server by typing in `grunt screeps` in your cmd/terminal.
 
 有关任务系统：
 因为这游戏本质是个搬运资源游戏
