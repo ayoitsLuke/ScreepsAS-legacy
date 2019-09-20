@@ -1,6 +1,6 @@
 "use strict";
 // initial Memroy
-console.log("-----Global Reset-----");
+console.log("\n\n-----Global Reset-----");
 require("version");
 if (!Memory.SCRIPT_VERSION) Memory.SCRIPT_VERSION = global.SCRIPT_VERSION;
 if (!Memory.rooms) Memory.rooms = {};
@@ -188,22 +188,22 @@ function creepWork(creep) {
           RoomObject.active(task.target)
             .memory.taskSent = undefined;
         }
-        case ERR_BUSY:
-        case ERR_NOT_IN_RANGE:
-        case ERR_TIRED:
-          break;
-        default:
-          // ! TODO handle dead creep (by accident or by age)
-          const target = RoomObject.active(task.target);
-          try {
-            if (target instanceof RoomObject) {
-              target.memory.taskSent = undefined;
-            } else {
-              Memory.roomObjects[task.target.id].taskSent = undefined;
-            }
-          } catch (e) {}
-          creep.memory.task = undefined;
-          break;
+      case ERR_BUSY:
+      case ERR_NOT_IN_RANGE:
+      case ERR_TIRED:
+        break;
+      default:
+        // ! TODO handle dead creep (by accident or by age)
+        const target = RoomObject.active(task.target);
+        task = undefined;
+        try {
+          if (target instanceof RoomObject) {
+            target.memory.taskSent = undefined;
+          } else {
+            Memory.roomObjects[task.target.id].taskSent = undefined;
+          }
+        } catch (e) { }
+        break;
     }
   }
 }
@@ -253,7 +253,7 @@ function garbageCollection() {
     }
   }
   for (const name in Game.structures) {
-    if (Game.structures[name].memory.taskSent === true) {}
+    if (Game.structures[name].memory.taskSent === true) { }
   }
 }
 /* SAMPLE CODE

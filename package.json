@@ -4,7 +4,7 @@
   "description": "Screeps script & developing environment setup",
   "main": "main.js",
   "directories": {
-    "lib": "lib"
+    "lib": "src/lib"
   },
   "scripts": {
     "start": "multimeter",

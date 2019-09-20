@@ -4,8 +4,6 @@
 .screeps.json
 dist/*
 node_modules/*
-# src/lib(trackable)/*/
-
 # Compiled source #
 ###################
 *.com

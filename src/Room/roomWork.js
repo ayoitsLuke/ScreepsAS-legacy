@@ -11,6 +11,7 @@ Room.prototype.gatherRequests = function(homeTasks) {
   // find tombstone
   this.find(FIND_TOMBSTONES)
     .forEach(tombstone => {
+      // TODO remove tasks in tombstone
       if (tombstone.memory.taskSent) return;
       Object.keys(tombstone.store)
         .forEach(r => tasks.push({
